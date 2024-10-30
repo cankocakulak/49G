@@ -1,94 +1,103 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import erfc
+import time
 
+# Set Parameters
+sim_params = {
+    'rx_center': np.array([0, 0, 0]),
+    'rx_r_inMicroMeters': 5,
+    'rx_tx_distance': 5,
+    'D_inMicroMeterSqrPerSecond': 100,
+    'tend': 0.4,
+    'delta_t': 0.0001,
+    'num_molecules': 50000
+}
+sim_params['tx_emission_pt'] = sim_params['rx_center'] + np.array([sim_params['rx_tx_distance'] + sim_params['rx_r_inMicroMeters'], 0, 0])
+
+# Simulate Gaussian Random Walk
 def simulate_diffusion(params):
-    np.random.seed(42)  # Ensure reproducibility
-
-    # Extract parameters from input
-    rx_center = np.array(params['rx_center'], dtype=np.float64)  # Specify float64
-    rx_radius = params['rx_r_inMicroMeters']
-    tx_emission_pt = np.array(params['tx_emission_pt'], dtype=np.float64)  # Specify float64
+    rx_center = np.array(params['rx_center'], dtype=np.float64)
+    rx_radius_sq = params['rx_r_inMicroMeters'] ** 2
+    tx_emission_pt = np.array(params['tx_emission_pt'], dtype=np.float64)
     D = params['D_inMicroMeterSqrPerSecond']
     delta_t = params['delta_t']
-    tend = params['tend']
     num_molecules = params['num_molecules']
+    num_steps = int(params['tend'] / delta_t)
 
-    # Initialize molecule positions at the emission point
-    molecule_positions = np.tile(tx_emission_pt, (num_molecules, 1)).astype(np.float64)
-    absorbed_molecules = np.zeros(num_molecules, dtype=bool)
+    # Standard deviation of the step size for Brownian motion
+    sigma = np.sqrt(2 * D * delta_t)
 
-    time_steps = int(tend / delta_t)
-    cumulative_absorbed = np.zeros(time_steps)
-    distances_to_rx = np.linalg.norm(molecule_positions - rx_center, axis=1)
+    # Initialize molecules at the transmitter position
+    mol_positions = np.tile(tx_emission_pt, (num_molecules, 1)).astype(np.float64)
+    nRx_timeline = np.zeros(num_steps)  # Track absorption per step
 
-    for t in range(time_steps):
-        # Random walk (Brownian motion)
-        step_size = np.sqrt(2 * D * delta_t)
-        random_steps = np.random.normal(0, step_size, molecule_positions.shape)
-        molecule_positions += random_steps
+    # Simulate Brownian motion over time steps
+    for step in range(num_steps):
+        # Generate random displacements (Gaussian noise)
+        displacements = np.random.normal(0, sigma, size=mol_positions.shape)
+        mol_positions += displacements  # Update positions
 
-        # Check for absorption
-        distances_to_rx = np.linalg.norm(molecule_positions - rx_center, axis=1)
-        newly_absorbed = (distances_to_rx <= rx_radius) & (~absorbed_molecules)
-        absorbed_molecules |= newly_absorbed  # Update absorbed molecules
+        # Calculate squared distances from receiver center
+        distances_sq = np.sum((mol_positions - rx_center) ** 2, axis=1)
 
-        # Record cumulative absorbed molecules
-        cumulative_absorbed[t] = np.sum(absorbed_molecules)
+        # Find molecules that hit the receiver
+        hit_mask = distances_sq <= rx_radius_sq
+        nRx_timeline[step] = np.sum(hit_mask)
 
-    return np.arange(0, tend, delta_t), cumulative_absorbed
+        # Keep only molecules that did not hit the receiver
+        mol_positions = mol_positions[~hit_mask]
 
-def analytical_solution(params):
+    time_steps = np.arange(delta_t, params['tend'] + delta_t, delta_t)
+    return nRx_timeline, time_steps
+
+# Evaluate Theoretical Formula
+def eval_theoretical_nrx(params, time_steps):
+    dist = params['rx_tx_distance']
     rx_radius = params['rx_r_inMicroMeters']
-    d = params['rx_tx_distance']
     D = params['D_inMicroMeterSqrPerSecond']
-    N_tx = params['num_molecules']
-    t_values = np.arange(0, params['tend'], params['delta_t'])
 
-    F_t = (rx_radius / (rx_radius + d)) * erfc(d / np.sqrt(4 * D * t_values))
-    N_Rx_t = N_tx * F_t
-    return t_values, N_Rx_t
+    part1 = rx_radius / (dist + rx_radius)
+    nrx_cumulative = part1 * erfc(dist / np.sqrt(4 * D * time_steps))
 
-def plot_results(t_sim, cumulative_absorbed, t_analytical, N_Rx_analytical):
-    plt.figure(figsize=(10, 6))
-    plt.plot(t_sim, cumulative_absorbed, label='Simulated Cumulative Absorbed', linestyle='--')
-    plt.plot(t_analytical, N_Rx_analytical, label='Analytical Solution', linestyle='-')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Cumulative Absorbed Molecules')
-    plt.title('Effect of Reflection on Diffusion')
-    plt.legend()
-    plt.show()
+    # Convert cumulative to stepwise by subtracting shifted cumulative values
+    nrx_stepwise = np.diff(nrx_cumulative, prepend=0)
+    return nrx_stepwise
 
-# Parameters for the simulation
-params_task1_1 = {
-    'rx_center': [0, 0, 0],
-    'rx_r_inMicroMeters': 5,
-    'rx_tx_distance': 5,
-    'tx_emission_pt': [10, 0, 0],
-    'D_inMicroMeterSqrPerSecond': 75,
-    'tend': 0.4,
-    'delta_t': 0.0001,
-    'num_molecules': 50000
-}
+# Helper function to merge timelines
+def merge_timeline(merge_cnt, timeline, time):
+    new_size = len(timeline) // merge_cnt
+    timeline_merged = np.sum(timeline[:new_size * merge_cnt].reshape(-1, merge_cnt), axis=1)
+    time_merged = time[:new_size * merge_cnt].reshape(-1, merge_cnt).mean(axis=1)
+    return timeline_merged, time_merged
 
-params_task1_2 = {
-    'rx_center': [0, 0, 0],
-    'rx_r_inMicroMeters': 5,
-    'rx_tx_distance': 5,
-    'tx_emission_pt': [10, 0, 0],
-    'D_inMicroMeterSqrPerSecond': 200,
-    'tend': 0.4,
-    'delta_t': 0.0001,
-    'num_molecules': 50000
-}
+# Run the Simulation
+print("Simulation [START]")
+start_time = time.time()
+nRx_sim, time_sim = simulate_diffusion(sim_params)
+print(f"Simulation [END] Duration: {time.time() - start_time:.2f} seconds")
 
-# Run simulations and analytical solutions
-t_sim_1, cumulative_absorbed_1 = simulate_diffusion(params_task1_1)
-t_analytical_1, N_Rx_analytical_1 = analytical_solution(params_task1_1)
+# Compute Theoretical Results
+print("Theoretical Formula [START]")
+start_time = time.time()
+nRx_theory = eval_theoretical_nrx(sim_params, time_sim)
+print(f"Theoretical Formula [END] Duration: {time.time() - start_time:.2f} seconds")
 
-t_sim_2, cumulative_absorbed_2 = simulate_diffusion(params_task1_2)
-t_analytical_2, N_Rx_analytical_2 = analytical_solution(params_task1_2)
+# Merge timelines for smoother plotting
+merge_cnt = 10
+nRx_sim_merged, time_merged = merge_timeline(merge_cnt, nRx_sim, time_sim)
+nRx_theory_merged, _ = merge_timeline(merge_cnt, nRx_theory, time_sim)
 
-# Plot results for both parameter sets
-plot_results(t_sim_1, cumulative_absorbed_1, t_analytical_1, N_Rx_analytical_1)
-plot_results(t_sim_2, cumulative_absorbed_2, t_analytical_2, N_Rx_analytical_2)
+# Plot the Results
+plt.figure(figsize=(8, 5))
+plt.plot(time_merged, nRx_sim_merged / sim_params['num_molecules'], '-', linewidth=2, label='Simulation')
+plt.plot(time_merged, nRx_theory_merged, '--', linewidth=2, label='Theory')
+plt.xlabel('Time (s)')
+plt.ylabel('Average Fraction of Received Molecules')
+plt.legend()
+plt.grid(True)
+plt.title(f'Delta t={merge_cnt * sim_params["delta_t"]}; r_rx={sim_params["rx_r_inMicroMeters"]}; '
+          f'dist={sim_params["rx_tx_distance"]}; D={sim_params["D_inMicroMeterSqrPerSecond"]}')
+plt.savefig('simulation_plot.png')
+print('Plot saved as simulation_plot.png')
+plt.show()
