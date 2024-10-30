@@ -3,17 +3,20 @@ import matplotlib.pyplot as plt
 from scipy.special import erfc
 import time
 
-# Set Parameters
-sim_params = {
+# Define parameter sets
+sim_params_1 = {
     'rx_center': np.array([0, 0, 0]),
     'rx_r_inMicroMeters': 5,
     'rx_tx_distance': 5,
-    'D_inMicroMeterSqrPerSecond': 100,
+    'tx_emission_pt': np.array([10, 0, 0]),
+    'D_inMicroMeterSqrPerSecond': 75,
     'tend': 0.4,
     'delta_t': 0.0001,
     'num_molecules': 50000
 }
-sim_params['tx_emission_pt'] = sim_params['rx_center'] + np.array([sim_params['rx_tx_distance'] + sim_params['rx_r_inMicroMeters'], 0, 0])
+
+sim_params_2 = sim_params_1.copy()
+sim_params_2['D_inMicroMeterSqrPerSecond'] = 200
 
 # Simulate Gaussian Random Walk
 def simulate_diffusion(params):
@@ -58,46 +61,47 @@ def eval_theoretical_nrx(params, time_steps):
     D = params['D_inMicroMeterSqrPerSecond']
 
     part1 = rx_radius / (dist + rx_radius)
-    nrx_cumulative = part1 * erfc(dist / np.sqrt(4 * D * time_steps))
+    nrx_cumulative = params['num_molecules'] * part1 * erfc(dist / np.sqrt(4 * D * time_steps))
+    return nrx_cumulative
 
-    # Convert cumulative to stepwise by subtracting shifted cumulative values
-    nrx_stepwise = np.diff(nrx_cumulative, prepend=0)
-    return nrx_stepwise
-
-# Helper function to merge timelines
-def merge_timeline(merge_cnt, timeline, time):
-    new_size = len(timeline) // merge_cnt
-    timeline_merged = np.sum(timeline[:new_size * merge_cnt].reshape(-1, merge_cnt), axis=1)
-    time_merged = time[:new_size * merge_cnt].reshape(-1, merge_cnt).mean(axis=1)
-    return timeline_merged, time_merged
-
-# Run the Simulation
-print("Simulation [START]")
+# Run simulations for both parameter sets
+print("Simulation 1 (D=75) [START]")
 start_time = time.time()
-nRx_sim, time_sim = simulate_diffusion(sim_params)
-print(f"Simulation [END] Duration: {time.time() - start_time:.2f} seconds")
+nRx_sim_1, time_sim_1 = simulate_diffusion(sim_params_1)
+print(f"Simulation 1 [END] Duration: {time.time() - start_time:.2f} seconds")
 
-# Compute Theoretical Results
-print("Theoretical Formula [START]")
+print("Simulation 2 (D=200) [START]")
 start_time = time.time()
-nRx_theory = eval_theoretical_nrx(sim_params, time_sim)
-print(f"Theoretical Formula [END] Duration: {time.time() - start_time:.2f} seconds")
+nRx_sim_2, time_sim_2 = simulate_diffusion(sim_params_2)
+print(f"Simulation 2 [END] Duration: {time.time() - start_time:.2f} seconds")
 
-# Merge timelines for smoother plotting
-merge_cnt = 10
-nRx_sim_merged, time_merged = merge_timeline(merge_cnt, nRx_sim, time_sim)
-nRx_theory_merged, _ = merge_timeline(merge_cnt, nRx_theory, time_sim)
+# Calculate cumulative sums for simulation results
+nRx_sim_cumulative_1 = np.cumsum(nRx_sim_1)
+nRx_sim_cumulative_2 = np.cumsum(nRx_sim_2)
+
+# Calculate theoretical results
+print("Calculating theoretical results...")
+nRx_theory_1 = eval_theoretical_nrx(sim_params_1, time_sim_1)
+nRx_theory_2 = eval_theoretical_nrx(sim_params_2, time_sim_2)
 
 # Plot the Results
-plt.figure(figsize=(8, 5))
-plt.plot(time_merged, nRx_sim_merged / sim_params['num_molecules'], '-', linewidth=2, label='Simulation')
-plt.plot(time_merged, nRx_theory_merged, '--', linewidth=2, label='Theory')
+plt.figure(figsize=(10, 6))
+
+# Plot for D = 75
+plt.plot(time_sim_1, nRx_sim_cumulative_1, '-', linewidth=2, label='Simulation (D=75)')
+plt.plot(time_sim_1, nRx_theory_1, '--', linewidth=2, label='Theory (D=75)')
+
+# Plot for D = 200
+plt.plot(time_sim_2, nRx_sim_cumulative_2, '-', linewidth=2, label='Simulation (D=200)')
+plt.plot(time_sim_2, nRx_theory_2, '--', linewidth=2, label='Theory (D=200)')
+
 plt.xlabel('Time (s)')
-plt.ylabel('Average Fraction of Received Molecules')
+plt.ylabel('Cumulative Number of Received Molecules')
 plt.legend()
 plt.grid(True)
-plt.title(f'Delta t={merge_cnt * sim_params["delta_t"]}; r_rx={sim_params["rx_r_inMicroMeters"]}; '
-          f'dist={sim_params["rx_tx_distance"]}; D={sim_params["D_inMicroMeterSqrPerSecond"]}')
-plt.savefig('simulation_plot.png')
-print('Plot saved as simulation_plot.png')
+plt.title('Cumulative Received Molecules vs Time\n' +
+          f'r_rx={sim_params_1["rx_r_inMicroMeters"]}µm, ' +
+          f'distance={sim_params_1["rx_tx_distance"]}µm')
+plt.savefig('cumulative_simulation_plot.png')
+print('Plot saved as cumulative_simulation_plot.png')
 plt.show()
