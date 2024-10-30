@@ -20,3 +20,6 @@ text(3, h.Values(3)+0.015, num2str(h.Values(3)));
 xlabel('X', 'fontsize', font_size);
 ylabel('PMF - f_X', 'fontsize', font_size);
 xticks([1 2 3])
+
+saveas(h, 'simulation_plott.png');
+disp('Plot saved as simulation_plot.png');
