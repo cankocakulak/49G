@@ -45,9 +45,7 @@ xlabel('Time - (s)')
 ylabel('Average Fraction of Received Molecules in \Delta t')
 legend('Simulation', 'Theory');
 title(['\Deltat=', num2str(merge_cnt*sim_params.delta_t), '; r_{rx}=', num2str(sim_params.rx_r_inMicroMeters), '; dist=', num2str(sim_params.rx_tx_distance), '; D=', num2str(sim_params.D_inMicroMeterSqrPerSecond)])
-% Save the figure
-saveas(hFig, 'simulation_plot.png');
-disp('Plot saved as simulation_plot.png');
+
 
 
 
