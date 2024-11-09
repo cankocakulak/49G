@@ -42,10 +42,12 @@ for pos in [7, 9, 11, 13]:  # A values
 
 
 def check_reflection(positions, reflecting_x, tx_x, opening_height):
+
     """Check and handle reflections at the obstacle"""
     if reflecting_x < tx_x:  # Wall is on left side of transmitter
         # Find molecules that hit the reflecting line from right
         hit_mask = positions[:, 0] <= reflecting_x
+
     else:  # Wall is on right side of transmitter
         # Find molecules that hit the reflecting line from left
         hit_mask = positions[:, 0] >= reflecting_x
@@ -64,7 +66,8 @@ def check_reflection(positions, reflecting_x, tx_x, opening_height):
     return positions
     
 def simulate_diffusion(params):
-    """Modified simulation with correct distance calculations"""
+    """Debug statement to track the simulation from terminal and see potential issues"""
+
     print(f"\nInitializing simulation with parameters:")
     print(f"- Wall position (a): {params['reflecting_line_eqn_A']}µm")
     print(f"- Actual Wall-Rx distance (a-rr): {params['actual_wall_rx_distance']}µm")
@@ -82,9 +85,13 @@ def simulate_diffusion(params):
     opening_height = params['line_opening_h_inMicroM']
     tx_x = params['tx_emission_pt'][0]
 
+
+    # Standard deviation of the step size for Brownian motion
     sigma = np.sqrt(2 * D * delta_t)
+
+    # Initialize molecules at the transmitter position
     mol_positions = np.tile(tx_emission_pt, (num_molecules, 1)).astype(np.float64)
-    nRx_timeline = np.zeros(num_steps)
+    nRx_timeline = np.zeros(num_steps)  # Track absorption per step
     
     # Add progress tracking
     progress_interval = num_steps // 10
@@ -92,6 +99,7 @@ def simulate_diffusion(params):
     absorbed_total = 0
     
     print("\nStarting simulation steps...")
+    
     for step in range(num_steps):
         if step % progress_interval == 0:
             percent_complete = (step / num_steps) * 100
