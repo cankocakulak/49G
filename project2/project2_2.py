@@ -2,6 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
+#After installing the required packages, run the following code to simulate the diffusion of molecules in a 2D environment with a reflecting obstacle.
+# python project2_2.py
+
 # Define base parameter set
 base_params = {
     'rx_center': np.array([0, 0]),  # 2D coordinates

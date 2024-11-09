@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 from scipy.special import erfc
 import time
 
+#After installing the required packages, run the following code to simulate the diffusion of molecules in a 3D environment with a spherical receiver.
+# python project2_1.py
+
 # Define parameter sets
 sim_params_1 = {
     'rx_center': np.array([0, 0, 0]),
