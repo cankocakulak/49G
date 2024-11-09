@@ -20,7 +20,7 @@ base_params = {
 
 # Create parameter sets with different reflecting wall positions
 param_sets = []
-for pos in [7, 9, 11, 13]:  # A values
+for pos in [3, 5, 7, 9]:  # A values
     params = base_params.copy()
     
     # Calculate actual distances accounting for receiver radius (rr)
@@ -41,27 +41,26 @@ for pos in [7, 9, 11, 13]:  # A values
     param_sets.append(params)
 
 
-def check_reflection(positions, reflecting_x, tx_x, opening_height):
-
+def check_reflection(positions, reflecting_x, tx_x, opening_height, buffer_distance=0.1):
     """Check and handle reflections at the obstacle"""
+    """buffer_distance is added in order to avoid checking the molecules that already passed the opening"""
     if reflecting_x < tx_x:  # Wall is on left side of transmitter
         # Find molecules that hit the reflecting line from right
-        hit_mask = positions[:, 0] <= reflecting_x
-
+        hit_mask = (positions[:, 0] <= reflecting_x) & (positions[:, 0] >= reflecting_x - buffer_distance)
     else:  # Wall is on right side of transmitter
         # Find molecules that hit the reflecting line from left
-        hit_mask = positions[:, 0] >= reflecting_x
+        hit_mask = (positions[:, 0] >= reflecting_x) & (positions[:, 0] <= reflecting_x + buffer_distance)
     
     if np.any(hit_mask):  # Only proceed if there are molecules hitting the wall
         # Among hit molecules, find which ones are at the opening
-        at_opening = np.abs(positions[hit_mask, 1]) <= opening_height/2
+        at_opening = np.abs(positions[hit_mask, 1]) <= opening_height / 2
         
         # Create mask for molecules that should be reflected
         reflect_mask = hit_mask.copy()
         reflect_mask[hit_mask] = ~at_opening
         
         # Reflect molecules that hit the wall (not at opening)
-        positions[reflect_mask, 0] = 2*reflecting_x - positions[reflect_mask, 0]
+        positions[reflect_mask, 0] = 2 * reflecting_x - positions[reflect_mask, 0]
     
     return positions
     
@@ -99,7 +98,7 @@ def simulate_diffusion(params):
     absorbed_total = 0
     
     print("\nStarting simulation steps...")
-    
+
     for step in range(num_steps):
         if step % progress_interval == 0:
             percent_complete = (step / num_steps) * 100
