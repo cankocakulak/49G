@@ -4,12 +4,12 @@
 
 class Particle {
   PVector pos, vel, acc;
-  float maxSpeed = 2;
+  float maxSpeed = 2;        // Maximum particle speed
   Colors colors;
-  float lifespan = 255;
-  float decay = 0.95;
-  float strokeWeight = random(1, 3);
-
+  float lifespan = 255;      // Starting opacity
+  float decay = 0.95;        // How quickly particles fade (closer to 1 = longer lasting)
+  float strokeWeight = random(1, 3);  // Thickness of particles
+  
   Particle(float x, float y, Colors c) {
     pos = new PVector(x, y);
     vel = new PVector(0, 0);

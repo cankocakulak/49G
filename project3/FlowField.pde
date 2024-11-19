@@ -16,8 +16,8 @@ class FlowField {
   }
 
   // Add new parameters for noise control
-  float noiseScale = 0.1;
-  float zoff = 0;  // For animated flow
+  float noiseScale = 0.1;    // Smaller = smoother flow, larger = more chaotic
+  float zoff = 0;            // Controls flow animation
 
   void generate() {
     float yoff = 0;
@@ -32,7 +32,7 @@ class FlowField {
       }
       yoff += noiseScale;
     }
-    zoff += 0.003; // Increment for flow animation
+    zoff += 0.003; //  Speed of field animation
   }
 
   void update() {

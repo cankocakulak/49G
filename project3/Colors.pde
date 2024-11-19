@@ -6,7 +6,7 @@ import java.util.Arrays;  // Add this import at the top
 class Colors {
   HashMap<String, int[]> colorSchemes;
   String currentScheme;
-  float colorNoiseScale = 0.01;
+  float colorNoiseScale = 0.1;  // Controls how quickly colors change spatially
   float colorBlendFactor = 0.5;
   
   Colors() {
