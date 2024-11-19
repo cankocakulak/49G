@@ -41,6 +41,13 @@ class Colors {
       color(85, 107, 47, 200),
       color(154, 205, 50, 200)
     });
+
+    colorSchemes.put("mountain", new int[] {
+      color(40, 46, 52, 200),    // Dark slate
+      color(70, 80, 87, 200),    // Mountain shadow
+      color(120, 130, 135, 200), // Misty gray
+      color(150, 155, 160, 200)  // Light peak
+});
     
     currentScheme = "default";
   }
@@ -64,6 +71,7 @@ class Colors {
     );
   }
   
+
   void setScheme(String schemeName) {
     if (colorSchemes.containsKey(schemeName)) {
       currentScheme = schemeName;

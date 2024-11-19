@@ -34,29 +34,16 @@ String currentPreset = "default";
 
 void keyPressed() {
   // Preset combinations
-  if (key >= '1' && key <= '5') {
+  if (key >= '1' && key <= '6') {
     switch(key) {
       case '1': setPreset("calm"); break;
       case '2': setPreset("storm"); break;
       case '3': setPreset("cosmic"); break;
       case '4': setPreset("nature"); break;
       case '5': setPreset("fire"); break;
+      case '6': setPreset("mountains"); break;
     }
   }
-  
-  // Color scheme controls
-  else if (key == 'c') {
-    colors.nextScheme();  // Cycle color schemes
-  }
-  else if (key == 'z') colors.setScheme("default");
-  else if (key == 'x') colors.setScheme("sunset");
-  else if (key == 'v') colors.setScheme("ocean");
-  else if (key == 'b') colors.setScheme("forest");
-  
-  // Flow field controls
-  else if (key == 'q') flowField.noiseScale *= 1.1;  // Increase noise scale
-  else if (key == 'a') flowField.noiseScale *= 0.9;  // Decrease noise scale
-  
   // Particle controls
   else if (key == 'w') {  // Add more particles
     for (int i = 0; i < 1000; i++) {
@@ -71,11 +58,7 @@ void keyPressed() {
   
   // Reset
   else if (key == 'r') {  // Reset sketch
-    background(255);
-    particles.clear();
-    for (int i = 0; i < 10000; i++) {
-      particles.add(new Particle(random(width), random(height), colors));
-    }
+    resetSketch();
   }
   
   println("Current Preset: " + currentPreset + 
@@ -84,73 +67,100 @@ void keyPressed() {
           " | Color Scheme: " + colors.currentScheme);
 }
 
+void resetSketch() {
+  background(255);
+  particles.clear();
+  for (int i = 0; i < 10000; i++) {
+    particles.add(new Particle(random(width), random(height), colors));
+  }
+}
+
+// Define preset parameters as a class
+class PresetParams {
+  float flowNoiseScale, flowZoff;
+  float particleMaxSpeed, particleDecay, particleStrokeWeight;
+  float colorNoiseScale;
+  String colorScheme;
+  
+  PresetParams(float fns, float fz, float pms, float pd, float psw, float cns, String cs) {
+    flowNoiseScale = fns;
+    flowZoff = fz;
+    particleMaxSpeed = pms;
+    particleDecay = pd;
+    particleStrokeWeight = psw;
+    colorNoiseScale = cns;
+    colorScheme = cs;
+  }
+}
+
+// Store all presets in a HashMap
+HashMap<String, PresetParams> presets = new HashMap<String, PresetParams>() {{
+  put("calm", new PresetParams(
+    0.05,   // flowNoiseScale
+    0.001,  // flowZoff
+    1.5,    // particleMaxSpeed
+    0.98,   // particleDecay
+    1.0,    // particleStrokeWeight
+    0.005,  // colorNoiseScale
+    "ocean" // colorScheme
+  ));
+  
+  put("storm", new PresetParams(
+    0.2, 0.005, 4.0, 0.95, 2.0, 0.02, "default"
+  ));
+  
+  put("cosmic", new PresetParams(
+    0.008, 0.002, 2.0, 0.99, 0.7, 0.01, "sunset"
+  ));
+  
+  put("nature", new PresetParams(
+    0.1, 0.003, 2.5, 0.97, 1.5, 0.015, "forest"
+  ));
+  
+  put("fire", new PresetParams(
+    0.15, 0.004, 3.0, 0.96, 2.0, 0.025, "sunset"
+  ));
+  
+  put("mountains", new PresetParams(
+    10000.6, 0.0015, 1.8, 0.985, 0.8, 11.12, "mountain"
+  ));
+}};
+
 void setPreset(String preset) {
   currentPreset = preset;
   
-  switch(preset) {
-    case "calm":
-      // Smooth, gentle flow with ocean colors
-      flowField.noiseScale = 0.05;
-      flowField.zoff = 0.001;
-      for (Particle p : particles) {
-        p.maxSpeed = 1.5;
-        p.decay = 0.98;
-        p.strokeWeight = random(0.5, 1.5);
-      }
-      colors.setScheme("ocean");
-      colors.colorNoiseScale = 0.005;
-      break;
-      
-    case "storm":
-      // Fast, chaotic movement with darker colors
-      flowField.noiseScale = 0.2;
-      flowField.zoff = 0.005;
-      for (Particle p : particles) {
-        p.maxSpeed = 4;
-        p.decay = 0.95;
-        p.strokeWeight = random(1, 3);
-      }
-      colors.setScheme("default");
-      colors.colorNoiseScale = 0.02;
-      break;
-      
-    case "cosmic":
-      // Slow, dreamy movement with long trails
-      flowField.noiseScale = 0.008;
-      flowField.zoff = 0.002;
-      for (Particle p : particles) {
-        p.maxSpeed = 2;
-        p.decay = 0.99;
-        p.strokeWeight = random(0.3, 1);
-      }
-      colors.setScheme("sunset");
-      colors.colorNoiseScale = 0.01;
-      break;
-      
-    case "nature":
-      // Organic, flowing movement
-      flowField.noiseScale = 0.1;
-      flowField.zoff = 0.003;
-      for (Particle p : particles) {
-        p.maxSpeed = 2.5;
-        p.decay = 0.97;
-        p.strokeWeight = random(1, 2);
-      }
-      colors.setScheme("forest");
-      colors.colorNoiseScale = 0.015;
-      break;
-      
-    case "fire":
-      // Energetic, fast-moving particles
-      flowField.noiseScale = 0.15;
-      flowField.zoff = 0.004;
-      for (Particle p : particles) {
-        p.maxSpeed = 3;
-        p.decay = 0.96;
-        p.strokeWeight = random(1.5, 2.5);
-      }
-      colors.setScheme("sunset");
-      colors.colorNoiseScale = 0.025;
-      break;
+  PresetParams params = presets.get(preset);
+  if (params == null) return;
+  
+  // Apply configurations
+  flowField.setNoiseScale(params.flowNoiseScale);
+  flowField.setZoffIncrement(params.flowZoff);
+  
+  for (Particle p : particles) {
+    p.setProperties(
+      params.particleMaxSpeed,
+      params.particleDecay,
+      random(params.particleStrokeWeight * 0.5, params.particleStrokeWeight * 1.5)
+    );
   }
+  
+  colors.setScheme(params.colorScheme);
+  colors.setColorNoiseScale(params.colorNoiseScale);
 }
+
+
+  
+  /*
+  // Color scheme controls
+  else if (key == 'c') colors.nextScheme();  // Cycle color schemes
+  else if (key == 'z') colors.setScheme("default");
+  else if (key == 'x') colors.setScheme("sunset");
+  else if (key == 'v') colors.setScheme("ocean");
+  else if (key == 'b') colors.setScheme("forest");
+  
+  // Flow field controls
+  else if (key == 'q') flowField.noiseScale *= 1.1;  // Increase noise scale
+  else if (key == 'a') flowField.noiseScale *= 0.9;  // Decrease noise scale
+  
+
+  */

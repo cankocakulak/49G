@@ -6,7 +6,6 @@ class FlowField {
   PVector[] field;
   int cols, rows;
   int scl;
-
   FlowField(int w, int h, int scl) {
     this.scl = scl;
     cols = w / scl;
@@ -18,6 +17,16 @@ class FlowField {
   // Add new parameters for noise control
   float noiseScale = 0.1;    // Smaller = smoother flow, larger = more chaotic
   float zoff = 0;            // Controls flow animation
+
+
+
+  void setNoiseScale(float scale) {
+  this.noiseScale = scale;
+  }
+  
+  void setZoffIncrement(float inc) {
+    this.zoff = inc;
+  }
 
   void generate() {
     float yoff = 0;
