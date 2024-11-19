@@ -6,6 +6,9 @@ class Particle {
   PVector pos, vel, acc;
   float maxSpeed = 2;
   Colors colors;
+  float lifespan = 255;
+  float decay = 0.95;
+  float strokeWeight = random(1, 3);
 
   Particle(float x, float y, Colors c) {
     pos = new PVector(x, y);
@@ -40,7 +43,9 @@ class Particle {
   }
 
   void show() {
-    stroke(colors.getColor(pos.x, pos.y)); // Use color from Colors class
+    stroke(colors.getColor(pos.x, pos.y), lifespan);
+    strokeWeight(strokeWeight);
     point(pos.x, pos.y);
+    lifespan *= decay;
   }
 }

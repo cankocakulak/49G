@@ -15,18 +15,24 @@ class FlowField {
     generate();
   }
 
+  // Add new parameters for noise control
+  float noiseScale = 0.1;
+  float zoff = 0;  // For animated flow
+
   void generate() {
     float yoff = 0;
     for (int y = 0; y < rows; y++) {
       float xoff = 0;
       for (int x = 0; x < cols; x++) {
         int index = x + y * cols;
-        float angle = noise(xoff, yoff) * TWO_PI;
+        // Add z-dimension for animation
+        float angle = noise(xoff, yoff, zoff) * TWO_PI * 4; // Multiply by 4 for more rotation
         field[index] = PVector.fromAngle(angle);
-        xoff += 0.1;
+        xoff += noiseScale;
       }
-      yoff += 0.1;
+      yoff += noiseScale;
     }
+    zoff += 0.003; // Increment for flow animation
   }
 
   void update() {

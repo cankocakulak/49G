@@ -12,7 +12,7 @@ void setup() {
   flowField = new FlowField(width, height, scl);
   colors = new Colors();
 
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < 10000; i++) {
     particles.add(new Particle(random(width), random(height), colors));
   }
 
