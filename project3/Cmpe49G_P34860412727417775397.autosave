@@ -12,7 +12,7 @@ void setup() {
   flowField = new FlowField(width, height, scl);
   colors = new Colors();
 
-  for (int i = 0; i < 10000; i++) { // Number of particles
+  for (int i = 0; i < 100000; i++) { // Number of particles
     particles.add(new Particle(random(width), random(height), colors));
   }
 
@@ -70,28 +70,8 @@ void keyPressed() {
 void resetSketch() {
   background(255);
   particles.clear();
-  
-  // Get current preset's particle count, or default to 10000 if no preset is active
-  int particleCount = 10000;  // default count
-  if (presets.containsKey(currentPreset)) {
-    particleCount = presets.get(currentPreset).particleCount;
-  }
-  
-  // Create new particles with current preset count
-  for (int i = 0; i < particleCount; i++) {
+  for (int i = 0; i < 100000; i++) {
     particles.add(new Particle(random(width), random(height), colors));
-  }
-  
-  // If there's an active preset, reapply its properties
-  if (presets.containsKey(currentPreset)) {
-    PresetParams params = presets.get(currentPreset);
-    for (Particle p : particles) {
-      p.setProperties(
-        params.particleMaxSpeed,
-        params.particleDecay,
-        random(params.particleStrokeWeight * 0.5, params.particleStrokeWeight * 1.5)
-      );
-    }
   }
 }
 
@@ -101,9 +81,8 @@ class PresetParams {
   float particleMaxSpeed, particleDecay, particleStrokeWeight;
   float colorNoiseScale;
   String colorScheme;
-  int particleCount;  // Added particle count
   
-  PresetParams(float fns, float fz, float pms, float pd, float psw, float cns, String cs, int pc) {
+  PresetParams(float fns, float fz, float pms, float pd, float psw, float cns, String cs) {
     flowNoiseScale = fns;
     flowZoff = fz;
     particleMaxSpeed = pms;
@@ -111,7 +90,6 @@ class PresetParams {
     particleStrokeWeight = psw;
     colorNoiseScale = cns;
     colorScheme = cs;
-    particleCount = pc;
   }
 }
 
@@ -124,28 +102,27 @@ HashMap<String, PresetParams> presets = new HashMap<String, PresetParams>() {{
     0.98,   // particleDecay
     1.0,    // particleStrokeWeight
     0.005,  // colorNoiseScale
-    "ocean", // colorScheme
-    8000    // particleCount
+    "ocean" // colorScheme
   ));
   
   put("storm", new PresetParams(
-    0.2, 0.005, 4.0, 0.95, 2.0, 0.02, "default", 12000
+    0.2, 0.005, 4.0, 0.95, 2.0, 0.02, "default"
   ));
   
   put("cosmic", new PresetParams(
-    0.008, 0.002, 2.0, 0.99, 0.7, 0.01, "sunset", 15000
+    0.008, 0.002, 2.0, 0.99, 0.7, 0.01, "sunset"
   ));
   
   put("nature", new PresetParams(
-    0.1, 0.003, 2.5, 0.97, 1.5, 0.015, "forest", 10000
+    0.1, 0.003, 2.5, 0.97, 1.5, 0.015, "forest"
   ));
   
   put("fire", new PresetParams(
-    0.15, 0.004, 3.0, 0.96, 2.0, 0.025, "sunset", 13000
+    0.15, 0.004, 3.0, 0.96, 2.0, 0.025, "sunset"
   ));
   
   put("mountains", new PresetParams(
-    100.6, 0.0015, 10.8, 0.985, 0.8, 11.12, "mountain", 50000
+    10000.6, 0.0015, 1.8, 0.985, 0.8, 11.12, "mountain"
   ));
 }};
 
@@ -159,7 +136,6 @@ void setPreset(String preset) {
   flowField.setNoiseScale(params.flowNoiseScale);
   flowField.setZoffIncrement(params.flowZoff);
   
-  // Only update existing particles' properties
   for (Particle p : particles) {
     p.setProperties(
       params.particleMaxSpeed,
@@ -171,6 +147,8 @@ void setPreset(String preset) {
   colors.setScheme(params.colorScheme);
   colors.setColorNoiseScale(params.colorNoiseScale);
 }
+
+
   
   /*
   // Color scheme controls
