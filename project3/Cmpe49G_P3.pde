@@ -4,48 +4,101 @@ FlowField flowField;
 Colors colors;
 String currentPreset = "default";
 import java.util.Iterator;
+ArrayList<ParticleState> undoStates = new ArrayList<ParticleState>();
+int maxUndoStates = 10;  // Maximum number of states to remember
 
 
 int scl = 20; // Scale of the flow field grid
 
-void setup() {
-  size(800, 800);
-  particles = new ArrayList<Particle>();  // Start empty
-  flowField = new FlowField(width, height, scl);
-  colors = new Colors();
-  background(255);
+
+class ParticleState {
+    ArrayList<Particle> particles;
+    String preset;
+    PImage frameSnapshot;
+    
+    ParticleState(ArrayList<Particle> currentParticles, String currentPreset) {
+        particles = new ArrayList<Particle>();
+        for (Particle p : currentParticles) {
+            particles.add(p.copy());
+        }
+        preset = currentPreset;
+        
+        // Ensure we capture the full frame
+        frameSnapshot = createImage(width, height, RGB);
+        frameSnapshot.copy(get(), 0, 0, width, height, 0, 0, width, height);
+    }
+}
+
+//Save current state
+void saveState() {
+    if (undoStates.size() > 0) {
+        // Only save if the current state is different from the last saved state
+        ParticleState lastState = undoStates.get(undoStates.size() - 1);
+        if (particles.size() == lastState.particles.size()) {
+            return;  // Skip saving if particle count hasn't changed
+        }
+    }
+    
+    undoStates.add(new ParticleState(particles, currentPreset));
+    if (undoStates.size() > maxUndoStates) {
+        undoStates.remove(0);
+    }
+    println("State saved! States available to undo: " + undoStates.size());
 }
 
 void setPreset(String preset) {
   ScenePreset scene = scenePresets.get(preset);
-  if (scene == null) return;
+  if (scene == null) {
+    println("ERROR: Scene preset not found: " + preset);
+    return;
+  }
   
   currentPreset = preset;
   
-  // Apply configurations without creating particles
+  // Get all presets
   ParticlePreset pp = particlePresets.get(scene.particlePreset);
   FlowPreset fp = flowPresets.get(scene.flowPreset);
   ColorPreset cp = colorPresets.get(scene.colorPreset);
   
+  if (pp == null) println("ERROR: Particle preset not found: " + scene.particlePreset);
+  if (fp == null) println("ERROR: Flow preset not found: " + scene.flowPreset);
+  if (cp == null) println("ERROR: Color preset not found: " + scene.colorPreset);
+  
   if (pp == null || fp == null || cp == null) return;
   
-  // Only update system settings
-  flowField.setNoiseScale(fp.noiseScale);
-  flowField.setZoffIncrement(fp.zoff);
+  // Reset everything first
+  colors.resetToDefault();
+  
+  // Then apply new settings
   colors.setScheme(cp.scheme);
   colors.setColorNoiseScale(cp.noiseScale);
+  flowField.setNoiseScale(fp.noiseScale);
+  flowField.setZoffIncrement(fp.zoff);
   
   // Clear existing particles
   particles.clear();
   
-  // Print the new state
-  println("Switched to preset: " + preset + " (0 particles)");
+  // Debug info
+  println("Set preset: " + preset);
+  println("Color scheme set to: " + cp.scheme);
+  println("Flow preset: " + scene.flowPreset);
+  println("Particle preset: " + scene.particlePreset);
 }
+
+void setup() {
+  size(800, 800);
+  particles = new ArrayList<Particle>();
+  flowField = new FlowField(width, height, scl);
+  colors = new Colors();
+  colors.resetToDefault();  // Ensure we start with default colors
+  background(255);
+}
+
 
 void draw() {
   flowField.update();
   
-  // Create temporary lists for modifications
+  // Temporary lists for modifications
   ArrayList<Particle> particlesToAdd = new ArrayList<Particle>();
   ArrayList<Particle> particlesToRemove = new ArrayList<Particle>();
   
@@ -58,21 +111,29 @@ void draw() {
     p.update();
     
     if (p.lifespan < 1) {
-      particlesToRemove.add(p);
-      
-      // Queue new particle for addition
-      ParticlePreset pp = particlePresets.get(currentPreset);
-      if (pp != null) {
-        PVector pos = getSpawnPosition(pp.spawnPattern);
-        Particle newP = new Particle(
-          pos.x, pos.y,
-          colors,
-          pp.renderMode,
-          pp.movementMode
-        );
-        newP.setProperties(pp.maxSpeed, pp.decay, pp.strokeWeight);
-        particlesToAdd.add(newP);
-      }
+        particlesToRemove.add(p);
+        
+        ScenePreset scene = scenePresets.get(currentPreset);
+        if (scene != null) {
+            ParticlePreset pp = particlePresets.get(scene.particlePreset);
+            ColorPreset cp = colorPresets.get(scene.colorPreset);
+            
+            if (pp != null && cp != null) {
+                // Maintain current color scheme
+                colors.setScheme(cp.scheme);
+                colors.setColorNoiseScale(cp.noiseScale);
+                
+                PVector pos = getSpawnPosition(pp.spawnPattern);
+                Particle newP = new Particle(
+                    pos.x, pos.y,
+                    colors,
+                    pp.renderMode,
+                    pp.movementMode
+                );
+                newP.setProperties(pp.maxSpeed, pp.decay, pp.strokeWeight);
+                particlesToAdd.add(newP);
+            }
+        }
     }
     
     p.show();
@@ -84,9 +145,27 @@ void draw() {
 }
 
 
-
+// Keyboard control
 void keyPressed() {
-  if (key >= '1' && key <= '9') {
+
+  if (key == 'z') {
+    if (undoStates.size() > 0) {
+        // Get the last state
+        ParticleState lastState = undoStates.remove(undoStates.size() - 1);
+        
+        // Clear the screen first
+        background(255);  // Add this line
+        
+        // Then restore visual state
+        image(lastState.frameSnapshot, 0, 0);
+        
+        // Rest of the restoration code...
+    }
+  }
+
+  else if (key >= '0' && key <= '9') {
+    saveState();  // Save before changing preset
+
     switch(key) {
       case '1': setPreset("calm_flow"); break;
       case '2': setPreset("storm_flow"); break;
@@ -97,34 +176,53 @@ void keyPressed() {
       case '7': setPreset("firework"); break;
       case '8': setPreset("curtain"); break;
       case '9': setPreset("vortex"); break;
+      case '0': setPreset("triangle_converge"); break;
+
     }
   }
-  
+
+  else if (key == 'c') {
+   setPreset("triangle_top");    
+  }
+  else if (key == 'x') {
+    setPreset("triangle_left");
+  }
+  else if (key == 'v') {
+    setPreset("triangle_right");
+  }
+
+
   else if (key == 'w') {  // Add particles
-    ScenePreset scene = scenePresets.get(currentPreset);
-    if (scene != null) {
-      ParticlePreset pp = particlePresets.get(scene.particlePreset);
-      if (pp != null) {
-        // Add particles in smaller batches
-        int batchSize = 500;  // Add 500 particles at a time
-        for (int i = 0; i < batchSize; i++) {
-          PVector pos = getSpawnPosition(pp.spawnPattern);
-          Particle p = new Particle(pos.x, pos.y, colors, pp.renderMode, pp.movementMode);
-          p.setProperties(pp.maxSpeed, pp.decay, pp.strokeWeight);
-          
-          // Special initialization for certain modes
-          if (pp.movementMode.equals("fountain")) {
-            p.vel = new PVector(random(-2, 2), -random(8, 12));
+      saveState();
+      ScenePreset scene = scenePresets.get(currentPreset);
+      if (scene != null) {
+          ParticlePreset pp = particlePresets.get(scene.particlePreset);
+          ColorPreset cp = colorPresets.get(scene.colorPreset);  // Get color preset
+          if (pp != null && cp != null) {  // Check both presets
+              // Set color scheme before creating particles
+              colors.setScheme(cp.scheme);
+              colors.setColorNoiseScale(cp.noiseScale);
+              
+              int batchSize = 500;
+              for (int i = 0; i < batchSize; i++) {
+                  PVector pos = getSpawnPosition(pp.spawnPattern);
+                  Particle p = new Particle(pos.x, pos.y, colors, pp.renderMode, pp.movementMode);
+                  p.setProperties(pp.maxSpeed, pp.decay, pp.strokeWeight);
+                  
+                  if (pp.movementMode.equals("fountain")) {
+                      p.vel = new PVector(random(-2, 2), -random(8, 12));
+                  }
+                  
+                  particles.add(p);
+              }
+              println("Added " + batchSize + " particles with color scheme: " + cp.scheme);
           }
-          
-          particles.add(p);
-        }
-        println("Added " + batchSize + " particles. Total: " + particles.size());
       }
-    }
   }
-  
+
   else if (key == 's') {  // Remove particles
+    saveState();  // Save before removing
+
     int removeCount = min(500, particles.size());  // Remove 500 at a time
     for (int i = 0; i < removeCount; i++) {
       particles.remove(particles.size()-1);
@@ -133,6 +231,8 @@ void keyPressed() {
   }
   
   else if (key == 'r') {  // Reset to empty
+    saveState();  // Add this line to save before reset
+
     particles.clear();
     background(255);
     println("Reset to 0 particles");
@@ -199,21 +299,55 @@ HashMap<String, ScenePreset> scenePresets = new HashMap<String, ScenePreset>() {
     "vortex_effect",
     "cosmic_dark"
   ));
+
+  put("triangle_converge", new ScenePreset(
+    "gentle",              // gentle flow
+    "triangle_converge",   // our new particle preset
+    "dark_converge"       // warm colors look nice
+  ));
+
+  put("triangle_top", new ScenePreset(
+    "gentle",              // gentle flow
+    "triangle_top",   // our new particle preset
+    "dark_converge"       // warm colors look nice
+  ));
+
+  put("triangle_left", new ScenePreset(
+    "gentle",              // gentle flow
+    "triangle_left",   // our new particle preset
+    "dark_converge"       // warm colors look nice
+  ));
+
+  put("triangle_right", new ScenePreset(
+    "gentle",              // gentle flow
+    "triangle_right",   // our new particle preset
+    "dark_converge"       // warm colors look nice
+  ));
+
 }};
 
 void resetSketch() {
-  background(255);
-  particles.clear();
-  
-  ParticlePreset pp = particlePresets.get(currentPreset);
-  if (pp == null) return;
-  
-  for (int i = 0; i < pp.count; i++) {
-    PVector pos = getSpawnPosition(pp.spawnPattern);
-    Particle p = new Particle(pos.x, pos.y, colors, pp.renderMode, pp.movementMode);
-    p.setProperties(pp.maxSpeed, pp.decay, pp.strokeWeight);
-    particles.add(p);
-  }
+    background(255);
+    particles.clear();
+    
+    ScenePreset scene = scenePresets.get(currentPreset);
+    if (scene == null) return;
+    
+    ParticlePreset pp = particlePresets.get(scene.particlePreset);
+    ColorPreset cp = colorPresets.get(scene.colorPreset);
+    
+    if (pp != null && cp != null) {
+        // Set color scheme before creating particles
+        colors.setScheme(cp.scheme);
+        colors.setColorNoiseScale(cp.noiseScale);
+        
+        for (int i = 0; i < pp.count; i++) {
+            PVector pos = getSpawnPosition(pp.spawnPattern);
+            Particle p = new Particle(pos.x, pos.y, colors, pp.renderMode, pp.movementMode);
+            p.setProperties(pp.maxSpeed, pp.decay, pp.strokeWeight);
+            particles.add(p);
+        }
+    }
 }
 
 

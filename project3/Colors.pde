@@ -8,48 +8,56 @@ class Colors {
   String currentScheme;
   float colorNoiseScale = 0.1;  // Controls how quickly colors change spatially
   float colorBlendFactor = 0.5;
-  
+
+  // Add default values
+  final String defaultScheme = "forest_deep";  // Default color scheme
+  final float defaultNoiseScale = 0.01;        // Default noise scale
+
+  void resetToDefault() {
+    currentScheme = defaultScheme;
+    colorNoiseScale = defaultNoiseScale;
+    // Reset any other color-related variables
+  }
   Colors() {
     colorSchemes = new HashMap<String, int[]>();
     
-    // Define multiple color schemes
-    colorSchemes.put("default", new int[] {
-      color(255, 0, 0, 200),
-      color(0, 255, 0, 200),
-      color(0, 0, 255, 200),
-      color(255, 255, 0, 200),
-      color(0, 255, 255, 200)
-    });
-    
-    colorSchemes.put("sunset", new int[] {
-      color(255, 87, 51, 200),
-      color(255, 189, 51, 200),
-      color(255, 139, 51, 200),
-      color(255, 87, 51, 200)
-    });
-    
-    colorSchemes.put("ocean", new int[] {
+    colorSchemes.put("ocean_calm", new int[] {
       color(0, 105, 148, 200),
       color(0, 154, 199, 200),
       color(77, 196, 255, 200),
       color(130, 222, 255, 200)
     });
     
-    colorSchemes.put("forest", new int[] {
+    colorSchemes.put("sunset_dynamic", new int[] {
+      color(255, 87, 51, 200),
+      color(255, 189, 51, 200),
+      color(255, 139, 51, 200),
+      color(255, 87, 51, 200)
+    });
+    
+    colorSchemes.put("forest_deep", new int[] {
       color(34, 139, 34, 200),
       color(0, 100, 0, 200),
       color(85, 107, 47, 200),
       color(154, 205, 50, 200)
     });
-
-    colorSchemes.put("mountain", new int[] {
+    
+    colorSchemes.put("cosmic_dark", new int[] {
       color(40, 46, 52, 200),    // Dark slate
       color(70, 80, 87, 200),    // Mountain shadow
       color(120, 130, 135, 200), // Misty gray
       color(150, 155, 160, 200)  // Light peak
-});
+    });
+
+      colorSchemes.put("dark_converge", new int[] {
+          color(20, 20, 30, 200),    // Very dark blue
+          color(40, 40, 60, 200),    // Dark purple-blue
+          color(60, 20, 80, 200),    // Dark purple
+          color(80, 20, 100, 200)    // Deep purple
+      });
     
-    currentScheme = "default";
+    currentScheme = "forest_deep";  // Updated default
+    
   }
 
   int getColor(float x, float y) {

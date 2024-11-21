@@ -46,6 +46,51 @@ static HashMap<String, ParticlePreset> particlePresets = new HashMap<String, Par
     "circle", // renderMode
     "fountain" // movementMode
   ));
+
+
+    // Original triangle (from bottom)
+    put("triangle_converge", new ParticlePreset(
+        2.0,      // maxSpeed
+        0.99,     // decay (long-lasting)
+        1.5,      // strokeWeight
+        3000,     // count
+        "bottom", // spawnPattern
+        "line",   // renderMode
+        "triangle_converge" // movement mode
+    ));
+    
+    // New triangle from top
+    put("triangle_top", new ParticlePreset(
+        2.0,      // maxSpeed
+        0.99,     // decay
+        1.5,      // strokeWeight
+        3000,     // count
+        "top",    // spawnPattern
+        "line",   // renderMode
+        "triangle_top" // movement mode
+    ));
+    
+    // New triangle from left
+    put("triangle_left", new ParticlePreset(
+        2.0,      // maxSpeed
+        0.99,     // decay
+        1.5,      // strokeWeight
+        3000,     // count
+        "left",   // spawnPattern
+        "line",   // renderMode
+        "triangle_left" // movement mode
+    ));
+    
+    // New triangle from right
+    put("triangle_right", new ParticlePreset(
+        2.0,      // maxSpeed
+        0.99,     // decay
+        1.5,      // strokeWeight
+        3000,     // count
+        "right",  // spawnPattern
+        "line",   // renderMode
+        "triangle_right" // movement mode
+    ));
   
   put("spiral_effect", new ParticlePreset(
     2.0, 0.99, 1.0, 2000, "center", "point", "spiral"
