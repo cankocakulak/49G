@@ -21,6 +21,29 @@ class Colors {
   Colors() {
     colorSchemes = new HashMap<String, int[]>();
     
+
+        // Add new grey schemes
+    colorSchemes.put("grey_scale", new int[] {
+        color(200, 200, 200, 200),  // Light grey
+        color(150, 150, 150, 200),  // Medium grey
+        color(100, 100, 100, 200),  // Dark grey
+        color(75, 75, 75, 200)      // Darker grey
+    });
+
+      colorSchemes.put("cool_grey", new int[] {
+        color(180, 185, 190, 200),  // Cool light grey
+        color(130, 140, 150, 200),  // Cool medium grey
+        color(90, 100, 110, 200),   // Cool dark grey
+        color(60, 70, 80, 200)      // Cool darker grey
+    });
+    
+    colorSchemes.put("warm_grey", new int[] {
+        color(190, 185, 180, 200),  // Warm light grey
+        color(150, 140, 130, 200),  // Warm medium grey
+        color(110, 100, 90, 200),   // Warm dark grey
+        color(80, 70, 60, 200)      // Warm darker grey
+    });
+
     colorSchemes.put("ocean_calm", new int[] {
       color(0, 105, 148, 200),
       color(0, 154, 199, 200),

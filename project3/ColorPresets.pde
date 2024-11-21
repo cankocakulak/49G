@@ -15,4 +15,8 @@ static HashMap<String, ColorPreset> colorPresets = new HashMap<String, ColorPres
   put("forest_deep", new ColorPreset("forest_deep", 0.015));
   put("cosmic_dark", new ColorPreset("cosmic_dark", 0.01));
   put("dark_converge", new ColorPreset("dark_converge", 0.01));  // Slow color variation
+    put("grey_scale", new ColorPreset("grey_scale", 0.01));
+put("cool_grey", new ColorPreset("cool_grey", 0.015));
+put("warm_grey", new ColorPreset("warm_grey", 0.012));
+    
 }};

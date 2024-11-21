@@ -85,13 +85,14 @@ void setPreset(String preset) {
   println("Particle preset: " + scene.particlePreset);
 }
 
+//Setup of background
 void setup() {
   size(800, 800);
   particles = new ArrayList<Particle>();
   flowField = new FlowField(width, height, scl);
   colors = new Colors();
   colors.resetToDefault();  // Ensure we start with default colors
-  background(255);
+  background(0);
 }
 
 
@@ -234,7 +235,7 @@ void keyPressed() {
     saveState();  // Add this line to save before reset
 
     particles.clear();
-    background(255);
+    background(0);
     println("Reset to 0 particles");
   }
   
@@ -247,19 +248,19 @@ HashMap<String, ScenePreset> scenePresets = new HashMap<String, ScenePreset>() {
   put("calm_flow", new ScenePreset(
     "calm",         // flow preset
     "sparse_flow",  // particle preset
-    "ocean_calm"    // color preset
+    "grey_scale"    // color preset
   ));
   
   put("storm_flow", new ScenePreset(
     "storm",
     "dense_flow",
-    "sunset_dynamic"
+    "cool_grey"
   ));
   
   put("cosmic_flow", new ScenePreset(
     "cosmic",
     "fine_flow",
-    "sunset_dynamic"
+    "warm_grey"
   ));
   
   // Special effect scenes
@@ -327,7 +328,7 @@ HashMap<String, ScenePreset> scenePresets = new HashMap<String, ScenePreset>() {
 }};
 
 void resetSketch() {
-    background(255);
+    background(0);
     particles.clear();
     
     ScenePreset scene = scenePresets.get(currentPreset);
