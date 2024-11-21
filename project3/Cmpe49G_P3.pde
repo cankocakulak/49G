@@ -1,188 +1,267 @@
 // Main program: Initializes particles, flow field, and color palette.
-// Updates the flow field and particle positions each frame.
 ArrayList<Particle> particles;
 FlowField flowField;
 Colors colors;
+String currentPreset = "default";
+import java.util.Iterator;
+
 
 int scl = 20; // Scale of the flow field grid
 
 void setup() {
   size(800, 800);
-  particles = new ArrayList<Particle>();
+  particles = new ArrayList<Particle>();  // Start empty
   flowField = new FlowField(width, height, scl);
   colors = new Colors();
+  background(255);
+}
 
-  for (int i = 0; i < 10000; i++) { // Number of particles
-    particles.add(new Particle(random(width), random(height), colors));
-  }
-
-  background(255); // Set the canvas background
+void setPreset(String preset) {
+  ScenePreset scene = scenePresets.get(preset);
+  if (scene == null) return;
+  
+  currentPreset = preset;
+  
+  // Apply configurations without creating particles
+  ParticlePreset pp = particlePresets.get(scene.particlePreset);
+  FlowPreset fp = flowPresets.get(scene.flowPreset);
+  ColorPreset cp = colorPresets.get(scene.colorPreset);
+  
+  if (pp == null || fp == null || cp == null) return;
+  
+  // Only update system settings
+  flowField.setNoiseScale(fp.noiseScale);
+  flowField.setZoffIncrement(fp.zoff);
+  colors.setScheme(cp.scheme);
+  colors.setColorNoiseScale(cp.noiseScale);
+  
+  // Clear existing particles
+  particles.clear();
+  
+  // Print the new state
+  println("Switched to preset: " + preset + " (0 particles)");
 }
 
 void draw() {
   flowField.update();
   
+  // Create temporary lists for modifications
+  ArrayList<Particle> particlesToAdd = new ArrayList<Particle>();
+  ArrayList<Particle> particlesToRemove = new ArrayList<Particle>();
+  
+  // First pass: update and mark particles for removal
   for (Particle p : particles) {
-    p.follow(flowField);
+    if (p.movementMode.equals("flow")) {
+      p.follow(flowField);
+    }
+    
     p.update();
+    
+    if (p.lifespan < 1) {
+      particlesToRemove.add(p);
+      
+      // Queue new particle for addition
+      ParticlePreset pp = particlePresets.get(currentPreset);
+      if (pp != null) {
+        PVector pos = getSpawnPosition(pp.spawnPattern);
+        Particle newP = new Particle(
+          pos.x, pos.y,
+          colors,
+          pp.renderMode,
+          pp.movementMode
+        );
+        newP.setProperties(pp.maxSpeed, pp.decay, pp.strokeWeight);
+        particlesToAdd.add(newP);
+      }
+    }
+    
     p.show();
   }
+  
+  // After iteration: perform removals and additions
+  particles.removeAll(particlesToRemove);
+  particles.addAll(particlesToAdd);
 }
 
 
-String currentPreset = "default";
 
 void keyPressed() {
-  // Preset combinations
-  if (key >= '1' && key <= '6') {
+  if (key >= '1' && key <= '9') {
     switch(key) {
-      case '1': setPreset("calm"); break;
-      case '2': setPreset("storm"); break;
-      case '3': setPreset("cosmic"); break;
-      case '4': setPreset("nature"); break;
-      case '5': setPreset("fire"); break;
-      case '6': setPreset("mountains"); break;
+      case '1': setPreset("calm_flow"); break;
+      case '2': setPreset("storm_flow"); break;
+      case '3': setPreset("cosmic_flow"); break;
+      case '4': setPreset("rain"); break;
+      case '5': setPreset("fountain"); break;
+      case '6': setPreset("spiral"); break;
+      case '7': setPreset("firework"); break;
+      case '8': setPreset("curtain"); break;
+      case '9': setPreset("vortex"); break;
     }
   }
-  // Particle controls
-  else if (key == 'w') {  // Add more particles
-    for (int i = 0; i < 1000; i++) {
-      particles.add(new Particle(random(width), random(height), colors));
+  
+  else if (key == 'w') {  // Add particles
+    ScenePreset scene = scenePresets.get(currentPreset);
+    if (scene != null) {
+      ParticlePreset pp = particlePresets.get(scene.particlePreset);
+      if (pp != null) {
+        // Add particles in smaller batches
+        int batchSize = 500;  // Add 500 particles at a time
+        for (int i = 0; i < batchSize; i++) {
+          PVector pos = getSpawnPosition(pp.spawnPattern);
+          Particle p = new Particle(pos.x, pos.y, colors, pp.renderMode, pp.movementMode);
+          p.setProperties(pp.maxSpeed, pp.decay, pp.strokeWeight);
+          
+          // Special initialization for certain modes
+          if (pp.movementMode.equals("fountain")) {
+            p.vel = new PVector(random(-2, 2), -random(8, 12));
+          }
+          
+          particles.add(p);
+        }
+        println("Added " + batchSize + " particles. Total: " + particles.size());
+      }
     }
   }
+  
   else if (key == 's') {  // Remove particles
-    for (int i = 0; i < 1000 && particles.size() > 0; i++) {
+    int removeCount = min(500, particles.size());  // Remove 500 at a time
+    for (int i = 0; i < removeCount; i++) {
       particles.remove(particles.size()-1);
     }
+    println("Removed " + removeCount + " particles. Total: " + particles.size());
   }
   
-  // Reset
-  else if (key == 'r') {  // Reset sketch
-    resetSketch();
+  else if (key == 'r') {  // Reset to empty
+    particles.clear();
+    background(255);
+    println("Reset to 0 particles");
   }
   
-  println("Current Preset: " + currentPreset + 
-          " | Particles: " + particles.size() + 
-          " | Flow Noise Scale: " + flowField.noiseScale +
-          " | Color Scheme: " + colors.currentScheme);
+  printState();
 }
+
+// Updated scene presets with consistent naming
+HashMap<String, ScenePreset> scenePresets = new HashMap<String, ScenePreset>() {{
+  // Flow-based scenes
+  put("calm_flow", new ScenePreset(
+    "calm",         // flow preset
+    "sparse_flow",  // particle preset
+    "ocean_calm"    // color preset
+  ));
+  
+  put("storm_flow", new ScenePreset(
+    "storm",
+    "dense_flow",
+    "sunset_dynamic"
+  ));
+  
+  put("cosmic_flow", new ScenePreset(
+    "cosmic",
+    "fine_flow",
+    "sunset_dynamic"
+  ));
+  
+  // Special effect scenes
+  put("rain", new ScenePreset(
+    "gentle",       // gentle downward flow
+    "rain_effect",  // rain particles
+    "ocean_calm"    // blue-ish colors
+  ));
+  
+  put("fountain", new ScenePreset(
+    "gentle",           // gentle flow
+    "fountain_effect",  // fountain particles
+    "forest_deep"       // green colors
+  ));
+
+
+  put("spiral", new ScenePreset(
+    "swirly",          // swirling flow
+    "spiral_effect",   // spiral particles
+    "sunset_dynamic"   // warm colors
+  ));
+  
+  put("firework", new ScenePreset(
+    "explosive",
+    "firework_effect",
+    "sunset_dynamic"
+  ));
+  
+  put("curtain", new ScenePreset(
+    "downward",
+    "curtain_effect",
+    "ocean_calm"
+  ));
+  
+  put("vortex", new ScenePreset(
+    "spiral",
+    "vortex_effect",
+    "cosmic_dark"
+  ));
+}};
 
 void resetSketch() {
   background(255);
   particles.clear();
   
-  // Get current preset's particle count, or default to 10000 if no preset is active
-  int particleCount = 10000;  // default count
-  if (presets.containsKey(currentPreset)) {
-    particleCount = presets.get(currentPreset).particleCount;
-  }
+  ParticlePreset pp = particlePresets.get(currentPreset);
+  if (pp == null) return;
   
-  // Create new particles with current preset count
-  for (int i = 0; i < particleCount; i++) {
-    particles.add(new Particle(random(width), random(height), colors));
-  }
-  
-  // If there's an active preset, reapply its properties
-  if (presets.containsKey(currentPreset)) {
-    PresetParams params = presets.get(currentPreset);
-    for (Particle p : particles) {
-      p.setProperties(
-        params.particleMaxSpeed,
-        params.particleDecay,
-        random(params.particleStrokeWeight * 0.5, params.particleStrokeWeight * 1.5)
-      );
-    }
+  for (int i = 0; i < pp.count; i++) {
+    PVector pos = getSpawnPosition(pp.spawnPattern);
+    Particle p = new Particle(pos.x, pos.y, colors, pp.renderMode, pp.movementMode);
+    p.setProperties(pp.maxSpeed, pp.decay, pp.strokeWeight);
+    particles.add(p);
   }
 }
 
-// Define preset parameters as a class
-class PresetParams {
-  float flowNoiseScale, flowZoff;
-  float particleMaxSpeed, particleDecay, particleStrokeWeight;
-  float colorNoiseScale;
-  String colorScheme;
-  int particleCount;  // Added particle count
-  
-  PresetParams(float fns, float fz, float pms, float pd, float psw, float cns, String cs, int pc) {
-    flowNoiseScale = fns;
-    flowZoff = fz;
-    particleMaxSpeed = pms;
-    particleDecay = pd;
-    particleStrokeWeight = psw;
-    colorNoiseScale = cns;
-    colorScheme = cs;
-    particleCount = pc;
+
+
+PVector getSpawnPosition(String pattern) {
+  switch(pattern) {
+    case "full":
+      return new PVector(random(width), random(height));
+    case "center":
+      float angle = random(TWO_PI);
+      float radius = random(50);
+      return new PVector(width/2 + cos(angle) * radius, height/2 + sin(angle) * radius);
+    case "top":
+      return new PVector(random(width), 0);
+    case "bottom":
+      return new PVector(random(width), height);
+    case "sides":
+      return new PVector(random(1) < 0.5 ? 0 : width, random(height));
+    default:
+      return new PVector(random(width), random(height));
   }
 }
 
-// Store all presets in a HashMap
-HashMap<String, PresetParams> presets = new HashMap<String, PresetParams>() {{
-  put("calm", new PresetParams(
-    0.05,   // flowNoiseScale
-    0.001,  // flowZoff
-    1.5,    // particleMaxSpeed
-    0.98,   // particleDecay
-    1.0,    // particleStrokeWeight
-    0.005,  // colorNoiseScale
-    "ocean", // colorScheme
-    8000    // particleCount
-  ));
+void printState() {
+  ScenePreset scene = scenePresets.get(currentPreset);
+  if (scene == null) return;
   
-  put("storm", new PresetParams(
-    0.2, 0.005, 4.0, 0.95, 2.0, 0.02, "default", 12000
-  ));
+  ParticlePreset pp = particlePresets.get(scene.particlePreset);
+  FlowPreset fp = flowPresets.get(scene.flowPreset);
+  ColorPreset cp = colorPresets.get(scene.colorPreset);
   
-  put("cosmic", new PresetParams(
-    0.008, 0.002, 2.0, 0.99, 0.7, 0.01, "sunset", 15000
-  ));
-  
-  put("nature", new PresetParams(
-    0.1, 0.003, 2.5, 0.97, 1.5, 0.015, "forest", 10000
-  ));
-  
-  put("fire", new PresetParams(
-    0.15, 0.004, 3.0, 0.96, 2.0, 0.025, "sunset", 13000
-  ));
-  
-  put("mountains", new PresetParams(
-    100.6, 0.0015, 10.8, 0.985, 0.8, 11.12, "mountain", 50000
-  ));
-}};
-
-void setPreset(String preset) {
-  currentPreset = preset;
-  
-  PresetParams params = presets.get(preset);
-  if (params == null) return;
-  
-  // Apply configurations
-  flowField.setNoiseScale(params.flowNoiseScale);
-  flowField.setZoffIncrement(params.flowZoff);
-  
-  // Only update existing particles' properties
-  for (Particle p : particles) {
-    p.setProperties(
-      params.particleMaxSpeed,
-      params.particleDecay,
-      random(params.particleStrokeWeight * 0.5, params.particleStrokeWeight * 1.5)
-    );
-  }
-  
-  colors.setScheme(params.colorScheme);
-  colors.setColorNoiseScale(params.colorNoiseScale);
+  println("Current Preset: " + currentPreset + 
+          " | Particles: " + particles.size() + 
+          " | Render Mode: " + (pp != null ? pp.renderMode : "default") +
+          " | Movement Mode: " + (pp != null ? pp.movementMode : "default") +
+          " | Flow Scale: " + (fp != null ? fp.noiseScale : flowField.noiseScale) +
+          " | Color Scheme: " + (cp != null ? cp.scheme : colors.currentScheme));
 }
-  
-  /*
-  // Color scheme controls
-  else if (key == 'c') colors.nextScheme();  // Cycle color schemes
-  else if (key == 'z') colors.setScheme("default");
-  else if (key == 'x') colors.setScheme("sunset");
-  else if (key == 'v') colors.setScheme("ocean");
-  else if (key == 'b') colors.setScheme("forest");
-  
-  // Flow field controls
-  else if (key == 'q') flowField.noiseScale *= 1.1;  // Increase noise scale
-  else if (key == 'a') flowField.noiseScale *= 0.9;  // Decrease noise scale
-  
 
-  */
+
+class ScenePreset {
+  String flowPreset;
+  String particlePreset;
+  String colorPreset;
+  
+  ScenePreset(String f, String p, String c) {
+    flowPreset = f;
+    particlePreset = p;
+    colorPreset = c;
+  }
+}
