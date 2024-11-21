@@ -248,19 +248,19 @@ HashMap<String, ScenePreset> scenePresets = new HashMap<String, ScenePreset>() {
   put("calm_flow", new ScenePreset(
     "calm",         // flow preset
     "sparse_flow",  // particle preset
-    "grey_scale"    // color preset
+    "ocean_calm"    // color preset
   ));
   
   put("storm_flow", new ScenePreset(
     "storm",
     "dense_flow",
-    "cool_grey"
+    "forest_deep"
   ));
   
   put("cosmic_flow", new ScenePreset(
     "cosmic",
     "fine_flow",
-    "warm_grey"
+    "cosmic_dark"
   ));
   
   // Special effect scenes
