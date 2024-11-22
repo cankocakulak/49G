@@ -1,6 +1,6 @@
 // Colors class: Manages color palettes and provides color values based on position or noise.
 // Allows customization of particle colors.
-import java.util.Arrays;  // Add this import at the top
+import java.util.Arrays;
 
 
 class Colors {

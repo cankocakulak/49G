@@ -42,7 +42,27 @@ An interactive particle system that creates various flow patterns and visual eff
 - Supports multiple render modes (point, line, circle)
 - Includes various spawn patterns (full, center, edges)
 
-## Notes
-- Performance may vary based on particle count
-- Some effects work best with specific particle counts
-- Color schemes are optimized for each effect type
+
+Files and their explanations:
+
+1. Cmpe49G_P3.pde: 
+Main program file that orchestrates all components and handles user interaction.
+
+2. Particle.pde: 
+Defines how individual particles behave, move, and render on screen.
+
+3. FlowField.pde: 
+Generates a grid of vectors using Perlin noise that guides particle movement.
+
+4. Colors.pde: 
+Manages color palettes and provides dynamic color values for particles.
+
+5. ParticlePresets.pde: 
+Stores predefined configurations for different particle behaviors and effects.
+
+6. ColorPresets.pde: 
+Contains preset color schemes and their associated noise parameters.
+
+7. FlowPresets.pde: 
+Defines different flow field behaviors from gentle to chaotic movements.
+
