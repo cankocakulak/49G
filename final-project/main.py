@@ -1,58 +1,62 @@
-from traffic_simulation import TrafficSimulation
+from traffic_simulation import BaseTrafficSimulation, VDRTrafficSimulation
 from traffic_visualization import TrafficVisualization
 import matplotlib.pyplot as plt
-import signal
-import sys
-import time
+import numpy as np
 
-def signal_handler(sig, frame):
-    print('\nSimulation stopped gracefully')
-    plt.close('all')
-    sys.exit(0)
+def create_simulation(model_type='basic'):
+    """Factory function to create the appropriate simulation type"""
+    
+    # Common parameters
+    ROAD_LENGTH = 100
+    NUM_CARS = 50
+    V_MAX = 5
+    P_SLOW = 0.2
+    BOUNDARY_TYPE = 'open'
+    ALPHA = 0.3
+    BETA = 0.3
+    
+    if model_type == 'vdr':
+        P0_SLOW = 0.6  # VDR specific parameter
+        return VDRTrafficSimulation(
+            road_length=ROAD_LENGTH,
+            num_cars=NUM_CARS,
+            max_velocity=V_MAX,
+            p_slow=P_SLOW,
+            p0_slow=P0_SLOW,
+            boundary_type=BOUNDARY_TYPE,
+            alpha=ALPHA,
+            beta=BETA
+        )
+    else:
+        return BaseTrafficSimulation(
+            road_length=ROAD_LENGTH,
+            num_cars=NUM_CARS,
+            max_velocity=V_MAX,
+            p_slow=P_SLOW,
+            boundary_type=BOUNDARY_TYPE,
+            alpha=ALPHA,
+            beta=BETA
+        )
 
 def main():
-    # Register signal handler for Ctrl+C
-    signal.signal(signal.SIGINT, signal_handler)
-    
-    # Simulation parameters
-    ROAD_LENGTH = 30     # Shorter road to better see effects
-    NUM_CARS = 50       # Start with fewer cars
-    V_MAX = 3
-    P_SLOW = 0.5       # Randomization probability
-    BOUNDARY_TYPE = 'open'  # 'open' or 'closed'
-    ALPHA = 0.3        # Probability of new cars entering
-    BETA = 0.8         # Probability of cars leaving
-    SIMULATION_STEPS = 100
+    # Choose model type: 'basic' or 'vdr'
+    MODEL_TYPE = 'vdr'  # Change this to switch between models
     
     # Create simulation
-    sim = TrafficSimulation(
-        road_length=ROAD_LENGTH,
-        num_cars=NUM_CARS,
-        max_velocity=V_MAX,
-        p_slow=P_SLOW,
-        boundary_type=BOUNDARY_TYPE,
-        alpha=ALPHA,
-        beta=BETA
-    )
-    
+    sim = create_simulation(MODEL_TYPE)
     vis = TrafficVisualization(sim)
     
-    # Run simulation with proper exit handling
     try:
-        for step in range(SIMULATION_STEPS):
+        for step in range(200):
             sim.update()
             vis.update_plot(step)
-            time.sleep(0.1)  # Add small delay to make visualization visible
             
         print("\nSimulation complete. Close the plot window to exit.")
         plt.ioff()
-        plt.show(block=True)
+        plt.show()
         
     except KeyboardInterrupt:
         print('\nSimulation stopped by user')
-        plt.close('all')
-    except Exception as e:
-        print(f"\nError occurred: {e}")
         plt.close('all')
 
 if __name__ == "__main__":

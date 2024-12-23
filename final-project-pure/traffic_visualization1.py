@@ -6,20 +6,9 @@ class TrafficVisualization:
         self.simulation = simulation
         plt.ion()
         
-        # Create figure with three subplots to include model type
-        self.fig = plt.figure(figsize=(15, 10))
-        
-        # Add model type indicator
-        model_type = "VDR Model" if hasattr(simulation, 'p0_slow') else "Basic NaSch Model"
-        self.fig.suptitle(f'Traffic Simulation - {model_type}', fontsize=12)
-        
-        # Setup subplots
-        self.ax1 = self.fig.add_subplot(211)  # Traffic flow
-        self.ax2 = self.fig.add_subplot(212)  # Density profile
-        
-        # Initialize history trackers
+        # Create figure with two subplots
+        self.fig, (self.ax1, self.ax2) = plt.subplots(2, 1, figsize=(15, 8))
         self.density_history = []
-        self.average_velocities = []
         
         # Setup road plot
         self.ax1.set_xlim(-1, simulation.road_length)
@@ -48,8 +37,6 @@ class TrafficVisualization:
         self.ax2.legend()
         self.ax2.grid(True)
         
-        plt.tight_layout()
-    
     def update_plot(self, step):
         road, velocities = self.simulation.get_state()
         
@@ -66,13 +53,9 @@ class TrafficVisualization:
         if car_positions:
             self.scatter.set_offsets(np.column_stack((car_positions, [0.5] * len(car_positions))))
             self.scatter.set_array(np.array(car_velocities))
-            # Calculate and store average velocity
-            avg_velocity = sum(car_velocities) / len(car_velocities)
-            self.average_velocities.append(avg_velocity)
         else:
             self.scatter.set_offsets(np.empty((0, 2)))
             self.scatter.set_array(np.array([]))
-            self.average_velocities.append(0)
         
         # Update density profile
         density_profile = self.simulation.get_density_profile(self.window_size)
