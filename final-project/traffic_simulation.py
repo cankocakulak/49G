@@ -2,16 +2,28 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class TrafficSimulation:
-    def __init__(self, road_length=100, num_cars=30, max_velocity=5, p_slow=0.3, 
-                 boundary_type='closed', alpha=0.3, beta=0.3):
+    def __init__(self, road_length, num_cars, max_velocity, p_slow, 
+                 boundary_type, alpha, beta):
+        """
+        Initialize traffic simulation with required parameters.
+        
+        Args:
+            road_length (int): Length of the road
+            num_cars (int): Initial number of cars (used only for closed boundary)
+            max_velocity (int): Maximum velocity allowed
+            p_slow (float): Probability of random slowdown
+            boundary_type (str): Either 'open' or 'closed'
+            alpha (float): Probability of car entering (for open boundary)
+            beta (float): Probability of car leaving (for open boundary)
+        """
         self.road_length = road_length
         self.road = [0] * road_length
         self.velocities = {}
         self.max_velocity = max_velocity
         self.p_slow = p_slow
         self.boundary_type = boundary_type
-        self.alpha = alpha  # Probability of car entering
-        self.beta = beta    # Probability of car leaving
+        self.alpha = alpha
+        self.beta = beta
         
         # Initialize cars
         if boundary_type == 'closed':

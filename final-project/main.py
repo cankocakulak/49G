@@ -1,9 +1,9 @@
 from traffic_simulation import TrafficSimulation
 from traffic_visualization import TrafficVisualization
-import time
 import matplotlib.pyplot as plt
 import signal
 import sys
+import time
 
 def signal_handler(sig, frame):
     print('\nSimulation stopped gracefully')
@@ -11,38 +11,18 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 def main():
-    # Simulation parameters
-    ROAD_LENGTH = 100
-    NUM_CARS = 30
-    V_MAX = 5
-    P_SLOW = 0.3
-    SIMULATION_STEPS = 100
-
-    # Create simulation
-    sim = TrafficSimulation(ROAD_LENGTH, NUM_CARS, V_MAX, P_SLOW)
-    vis = TrafficVisualization(sim)
-
-    # Run simulation
-    for step in range(SIMULATION_STEPS):
-        sim.update()
-        vis.update_plot(step)
-        time.sleep(0.1)  # Add small delay to make visualization visible
-
-    # Keep the plot window open
-    input("Press Enter to close...")
-
-if __name__ == "__main__":
     # Register signal handler for Ctrl+C
     signal.signal(signal.SIGINT, signal_handler)
     
-    # Parameters
-    ROAD_LENGTH = 50     # Shorter road to better see effects
-    NUM_CARS = 30       # Start with fewer cars
-    V_MAX = 5
-    P_SLOW = 0.2       # Lower randomization for smoother flow
-    BOUNDARY_TYPE = 'open'  # Set to open boundary
-    ALPHA = 0.8        # Probability of new cars entering
-    BETA = 0.4        # Probability of cars leaving
+    # Simulation parameters
+    ROAD_LENGTH = 30     # Shorter road to better see effects
+    NUM_CARS = 50       # Start with fewer cars
+    V_MAX = 3
+    P_SLOW = 0.5       # Randomization probability
+    BOUNDARY_TYPE = 'open'  # 'open' or 'closed'
+    ALPHA = 0.3        # Probability of new cars entering
+    BETA = 0.8         # Probability of cars leaving
+    SIMULATION_STEPS = 100
     
     # Create simulation
     sim = TrafficSimulation(
@@ -59,9 +39,10 @@ if __name__ == "__main__":
     
     # Run simulation with proper exit handling
     try:
-        for step in range(200):
+        for step in range(SIMULATION_STEPS):
             sim.update()
             vis.update_plot(step)
+            time.sleep(0.1)  # Add small delay to make visualization visible
             
         print("\nSimulation complete. Close the plot window to exit.")
         plt.ioff()
@@ -73,3 +54,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\nError occurred: {e}")
         plt.close('all')
+
+if __name__ == "__main__":
+    main()
