@@ -37,11 +37,18 @@ class TrafficAnalyzer:
     def __init__(self):
         self.metrics = {
             'basic': ModelMetrics(),
-            'vdr': ModelMetrics()
+            'vdr': ModelMetrics(),
+            'mvdr': ModelMetrics()
         }
         self.plot_colors = {
             'basic': 'skyblue',
-            'vdr': 'lightcoral'
+            'vdr': 'lightcoral',
+            'mvdr': 'lightgreen'
+        }
+        self.model_names = {
+            'basic': 'Basic NaSch',
+            'vdr': 'VDR',
+            'mvdr': 'Mixed VDR'
         }
     
     def collect_metrics(self, simulation, model_type: str, step: int):
@@ -71,7 +78,7 @@ class TrafficAnalyzer:
         """Analyze how density varies along the road"""
         plt.figure(figsize=(12, 6))
         
-        for model_type in ['basic', 'vdr']:
+        for model_type in self.metrics.keys():
             # Get the last 50 density profiles
             profiles = np.array(self.metrics[model_type].density_profiles[-50:])
             avg_profile = np.mean(profiles, axis=0)
@@ -79,7 +86,7 @@ class TrafficAnalyzer:
             # Plot spatial density distribution
             x = np.linspace(0, 100, len(avg_profile))
             plt.plot(x, avg_profile, 
-                    label=f"{'Basic NaSch' if model_type == 'basic' else 'VDR'}", 
+                    label=self.model_names[model_type], 
                     color=self.plot_colors[model_type])
         
         self._setup_plot("Spatial Density Distribution", 
@@ -105,95 +112,122 @@ class TrafficAnalyzer:
         self._plot_comparison_chart(metrics_data, filename)
 
     def print_summary_statistics(self):
-        """Print summary statistics for both models"""
-        for model_type in ['basic', 'vdr']:
-            print(f"\n{model_type.upper()} Model Statistics:")
+        """Print summary statistics for all models"""
+        for model_type in self.metrics.keys():
+            print(f"\n{self.model_names[model_type]} Model Statistics:")
             averages = self.metrics[model_type].get_averages()
             for metric, value in averages.items():
                 print(f"Average {metric.replace('_', ' ').title()}: {value:.3f}")
 
-    def _calculate_efficiency_metrics(self) -> Dict[str, Dict[str, float]]:
-        """Calculate efficiency metrics for both models"""
+    def _calculate_efficiency_metrics(self) -> Dict:
+        """Calculate efficiency metrics for all models"""
         metrics = {}
-        for model_type in ['basic', 'vdr']:
-            model_metrics = self.metrics[model_type]
-            avg_metrics = model_metrics.get_averages()
-            
+        for model_type in ['basic', 'vdr', 'mvdr']:
+            averages = self.metrics[model_type].get_averages()
             metrics[model_type] = {
-                'flow_density_ratio': avg_metrics['flow_rate'] / avg_metrics['density'],
-                'jam_frequency': avg_metrics['jam_frequency'],
-                'avg_velocity': avg_metrics['velocity']
+                'flow_rate': averages['flow_rate'],
+                'density': averages['density'],
+                'avg_velocity': averages['velocity'],
+                'jam_frequency': averages['jam_frequency']
             }
         return metrics
 
     def _plot_efficiency_ratio(self, ax, metrics: Dict):
         """Plot efficiency ratio comparison"""
-        ratios = [metrics[model]['flow_density_ratio'] for model in ['basic', 'vdr']]
-        ax.bar(['Basic NaSch', 'VDR'], ratios, 
-               color=[self.plot_colors['basic'], self.plot_colors['vdr']])
+        ratios = []
+        for model in ['basic', 'vdr', 'mvdr']:
+            if metrics[model]['density'] > 0:  # Avoid division by zero
+                ratio = metrics[model]['flow_rate'] / metrics[model]['density']
+            else:
+                ratio = 0
+            ratios.append(ratio)
         
-        self._setup_subplot(ax, "Traffic Efficiency (Flow/Density Ratio)", 
-                          "", "Ratio")
-        for i, v in enumerate(ratios):
-            ax.text(i, v, f'{v:.2f}', ha='center', va='bottom')
+        bars = ax.bar(range(3), ratios, 
+                     color=[self.plot_colors[m] for m in ['basic', 'vdr', 'mvdr']])
+        
+        # Add explicit labels
+        for model, bar in zip(['basic', 'vdr', 'mvdr'], bars):
+            bar.set_label(self.model_names[model])
+        
+        ax.set_xticks(range(3))
+        ax.set_xticklabels([self.model_names[m] for m in ['basic', 'vdr', 'mvdr']])
+        ax.set_title("Traffic Efficiency (Flow/Density Ratio)")
+        ax.legend()
+
+        # Add value labels
+        for bar in bars:
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2, height,
+                   f'{height:.2f}', ha='center', va='bottom')
 
     def _plot_flow_characteristics(self, ax, metrics: Dict):
         """Plot flow characteristics comparison"""
-        x = np.arange(2)
+        x = np.arange(3)
         width = 0.35
         
-        jam_freq = [metrics[model]['jam_frequency'] for model in ['basic', 'vdr']]
-        vel = [metrics[model]['avg_velocity'] for model in ['basic', 'vdr']]
+        # Get data for all models
+        jam_freq = [metrics[m]['jam_frequency'] for m in ['basic', 'vdr', 'mvdr']]
+        vel = [metrics[m]['avg_velocity'] for m in ['basic', 'vdr', 'mvdr']]
         
-        # Add explicit labels to the bars
-        ax.bar(x - width/2, jam_freq, width, 
-               label='Jam Frequency', color='lightgray')
-        ax.bar(x + width/2, vel, width, 
-               label='Avg Velocity', color='lightgreen')
+        # Create bars with labels
+        bars1 = ax.bar(x - width/2, jam_freq, width, label='Jam Frequency', color='lightgray')
+        bars2 = ax.bar(x + width/2, vel, width, label='Avg Velocity', color='lightgreen')
         
         ax.set_xticks(x)
-        ax.set_xticklabels(['Basic NaSch', 'VDR'])
+        ax.set_xticklabels([self.model_names[m] for m in ['basic', 'vdr', 'mvdr']])
         ax.set_title("Traffic Flow Characteristics")
-        ax.legend(loc='upper right')  # Explicitly set legend location
+        ax.legend()
+        
+        # Add value labels
+        for bars in [bars1, bars2]:
+            for bar in bars:
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2, height,
+                       f'{height:.2f}', ha='center', va='bottom')
 
-    def _prepare_comparison_data(self) -> Tuple[List[str], List[float], List[float]]:
+    def _prepare_comparison_data(self) -> Tuple[List[str], List[float], List[float], List[float]]:
         """Prepare data for comparison chart"""
         metrics = ['Flow Rate', 'Density', 'Velocity', 'Jam Frequency']
-        basic_values = []
-        vdr_values = []
+        model_values = {}
         
-        for model_type in ['basic', 'vdr']:
+        for model_type in ['basic', 'vdr', 'mvdr']:
             averages = self.metrics[model_type].get_averages()
-            values = [averages[k.lower().replace(' ', '_')] for k in metrics]
-            if model_type == 'basic':
-                basic_values = values
-            else:
-                vdr_values = values
-                
-        return metrics, basic_values, vdr_values
+            model_values[model_type] = [
+                averages['flow_rate'],
+                averages['density'],
+                averages['velocity'],
+                averages['jam_frequency']
+            ]
+        
+        return metrics, model_values['basic'], model_values['vdr'], model_values['mvdr']
 
-    def _plot_comparison_chart(self, data: Tuple[List[str], List[float], List[float]], 
+    def _plot_comparison_chart(self, data: Tuple[List[str], List[float], List[float], List[float]], 
                              filename: str):
         """Create and save comparison bar chart"""
-        metrics, basic_values, vdr_values = data
+        metrics, basic_values, vdr_values, mvdr_values = data
         
         plt.figure(figsize=(12, 6))
         x = np.arange(len(metrics))
-        width = 0.35
+        width = 0.25  # Narrower bars to fit three models
         
-        plt.bar(x - width/2, basic_values, width, 
-                label='Basic NaSch', color=self.plot_colors['basic'])
-        plt.bar(x + width/2, vdr_values, width, 
-                label='VDR', color=self.plot_colors['vdr'])
+        # Plot bars for each model
+        plt.bar(x - width, basic_values, width, 
+                label=self.model_names['basic'], color=self.plot_colors['basic'])
+        plt.bar(x, vdr_values, width, 
+                label=self.model_names['vdr'], color=self.plot_colors['vdr'])
+        plt.bar(x + width, mvdr_values, width, 
+                label=self.model_names['mvdr'], color=self.plot_colors['mvdr'])
         
-        self._setup_plot("Traffic Model Comparison: Basic NaSch vs VDR",
+        self._setup_plot("Traffic Model Comparison",
                         "Metrics", "Values", x_ticks=(x, metrics))
         
         # Add value labels
         for i, v in enumerate(basic_values):
-            plt.text(i - width/2, v, f'{v:.3f}', ha='center', va='bottom')
+            plt.text(i - width, v, f'{v:.3f}', ha='center', va='bottom')
         for i, v in enumerate(vdr_values):
-            plt.text(i + width/2, v, f'{v:.3f}', ha='center', va='bottom')
+            plt.text(i, v, f'{v:.3f}', ha='center', va='bottom')
+        for i, v in enumerate(mvdr_values):
+            plt.text(i + width, v, f'{v:.3f}', ha='center', va='bottom')
         
         plt.savefig(filename, dpi=300, bbox_inches='tight')
         print(f"\nStatistics comparison saved as {filename}")

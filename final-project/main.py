@@ -1,4 +1,4 @@
-from traffic_simulation import BaseTrafficSimulation, VDRTrafficSimulation
+from traffic_simulation import BaseTrafficSimulation, VDRTrafficSimulation, MixedVDRTrafficSimulation
 from traffic_visualization import TrafficVisualization
 from traffic_analysis import TrafficAnalyzer
 import matplotlib.pyplot as plt
@@ -19,6 +19,7 @@ class SimulationConfig:
     beta: float
     p0_slow: float
     steps: int
+    truck_ratio: float = 0.2  # Default truck ratio for mixed traffic
 
 class SimulationManager:
     """Manager class to handle simulation creation and execution"""
@@ -34,7 +35,8 @@ class SimulationManager:
                 alpha=0.6,
                 beta=0.6,
                 p0_slow=0.8,
-                steps=200
+                steps=200,
+                truck_ratio=0.2
             ),
             'comparison': SimulationConfig(
                 road_length=100,   # Longer road for statistics
@@ -45,15 +47,28 @@ class SimulationManager:
                 alpha=0.5,
                 beta=0.5,
                 p0_slow=0.8,
-                steps=200
+                steps=200,
+                truck_ratio=0.2
             )
         }
-        
+    
     def create_simulation(self, model_type: str, mode: str) -> BaseTrafficSimulation:
         """Create simulation based on model type and mode"""
         config = self.configs[mode]
         
-        if model_type == 'vdr':
+        if model_type == 'mvdr':
+            return MixedVDRTrafficSimulation(
+                road_length=config.road_length,
+                num_cars=config.num_cars,
+                max_velocity=config.v_max,
+                p_slow=config.p_slow,
+                p0_slow=config.p0_slow,
+                boundary_type=config.boundary_type,
+                alpha=config.alpha,
+                beta=config.beta,
+                truck_ratio=config.truck_ratio
+            )
+        elif model_type == 'vdr':
             return VDRTrafficSimulation(
                 road_length=config.road_length,
                 num_cars=config.num_cars,
@@ -64,15 +79,16 @@ class SimulationManager:
                 alpha=config.alpha,
                 beta=config.beta
             )
-        return BaseTrafficSimulation(
-            road_length=config.road_length,
-            num_cars=config.num_cars,
-            max_velocity=config.v_max,
-            p_slow=config.p_slow,
-            boundary_type=config.boundary_type,
-            alpha=config.alpha,
-            beta=config.beta
-        )
+        else:  # basic
+            return BaseTrafficSimulation(
+                road_length=config.road_length,
+                num_cars=config.num_cars,
+                max_velocity=config.v_max,
+                p_slow=config.p_slow,
+                boundary_type=config.boundary_type,
+                alpha=config.alpha,
+                beta=config.beta
+            )
     
     def run_single_simulation(self, model_type: str):
         """Run a single model simulation"""
@@ -80,10 +96,10 @@ class SimulationManager:
         self._run_simulation(sim, self.configs['single'].steps)
     
     def run_comparison(self):
-        """Run comparison between basic and VDR models"""
+        """Run comparison between all models"""
         analyzer = TrafficAnalyzer()
         
-        for model_type in ['basic', 'vdr']:
+        for model_type in ['basic', 'vdr', 'mvdr']:
             print(f"\nRunning {model_type.upper()} model simulation...")
             sim = self.create_simulation(model_type, 'comparison')
             vis = TrafficVisualization(sim)
@@ -112,9 +128,6 @@ class SimulationManager:
             
         except KeyboardInterrupt:
             print('\nSimulation stopped by user')
-            plt.close('all')
-        except Exception as e:
-            print(f"\nError occurred: {e}")
             plt.close('all')
     
     def _run_comparison_simulation(self, sim: BaseTrafficSimulation, 
@@ -160,10 +173,15 @@ def main():
     
     if mode == '1':
         model = get_user_input(
-            "\nChoose model:\n1. Basic NaSch\n2. VDR\nEnter 1 or 2: ",
-            ['1', '2']
+            "\nChoose model:\n1. Basic NaSch\n2. VDR\n3. Mixed VDR\nEnter 1, 2, or 3: ",
+            ['1', '2', '3']
         )
-        manager.run_single_simulation('basic' if model == '1' else 'vdr')
+        model_type = {
+            '1': 'basic',
+            '2': 'vdr',
+            '3': 'mvdr'
+        }[model]
+        manager.run_single_simulation(model_type)
     else:
         manager.run_comparison()
 
