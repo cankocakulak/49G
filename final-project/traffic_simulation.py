@@ -176,11 +176,11 @@ class MixedVDRTrafficSimulation(VDRTrafficSimulation):
                 'recovery_rate': 0.7
             },
             VehicleType.TRUCK: {
-                'max_velocity': max(2, max_velocity - 2),
+                'max_velocity': max(2, max_velocity - 1),
                 'min_velocity': 0,
-                'acceleration': 0.5,
-                'p_slow': p_slow * 1.3,
-                'p0_slow': p0_slow * 1.2,
+                'acceleration': 0.75,
+                'p_slow': p_slow * 1.15,
+                'p0_slow': p0_slow * 1.1,
                 'recovery_rate': 0.6
             }
         }
