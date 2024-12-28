@@ -23,8 +23,8 @@ VEHICLE_PROPERTIES = {
         color='blue'
     ),
     VehicleType.TRUCK: VehicleProperties(
-        max_velocity=3,
-        acceleration=0.5,
+        max_velocity=4,
+        acceleration=0.9,
         length=2,
         color='red'
     )

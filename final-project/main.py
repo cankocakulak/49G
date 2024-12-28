@@ -39,16 +39,16 @@ class SimulationManager:
                 truck_ratio=0.2
             ),
             'comparison': SimulationConfig(
-                road_length=200,   # Longer road for statistics
-                num_cars=75,
-                v_max=4,
-                p_slow=0.5,
+                road_length=100,   # Longer road for statistics
+                num_cars=50,
+                v_max=5,
+                p_slow=0.4,
                 boundary_type='open',
                 alpha=0.5,
                 beta=0.5,
                 p0_slow=0.8,
-                steps=200,
-                truck_ratio=0.2
+                steps=1000,
+                truck_ratio=0.1
             )
         }
     
