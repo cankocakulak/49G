@@ -4,7 +4,7 @@ class Square {
   float size;
   color squareColor;
   
-  final float MIN_SIZE = 50;
+  final float MIN_SIZE = 100;
   final float MAX_SIZE = 200;
   final float DEFAULT_GROWTH_RATE = 2.0;
   
@@ -13,7 +13,7 @@ class Square {
     float angle = random(-PI/2, 0);
     velocity = PVector.fromAngle(angle);
     velocity.mult(SPEED);
-    size = 100;  // Starting size
+    size = 150;  // Starting size
     squareColor = c;
   }
   

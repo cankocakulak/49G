@@ -2,7 +2,7 @@
 ArrayList<Square> squares;
 SquareCollisionHandler collisionHandler;
 SizeHandler sizeHandler;
-float SPEED = 15;
+float SPEED = 10;
 
 void setup() {
   size(800, 800);
