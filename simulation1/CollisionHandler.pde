@@ -86,12 +86,30 @@ class SquareCollisionHandler {
   
   private void handleVerticalSize(Square s1, Square s2) {
     if (frameCount % 10 == 0) {
-      if (s1.position.y < s2.position.y) {
-        s1.grow();
-        s2.shrink();
-      } else {
-        s2.grow();
-        s1.shrink();
+      // Calculate horizontal overlap
+      float s1Right = s1.position.x + s1.size;
+      float s2Right = s2.position.x + s2.size;
+      float s1Left = s1.position.x;
+      float s2Left = s2.position.x;
+      
+      // Check if there's significant horizontal overlap
+      if (!(s1Right < s2Left || s1Left > s2Right)) {
+        float overlap = min(s1Right, s2Right) - max(s1Left, s2Left);
+        float minSize = min(s1.size, s2.size);
+        
+        if (overlap > minSize * 0.5) {
+          // Ensure squares are vertically aligned (one clearly above the other)
+          float verticalGap = abs(s1.position.y - s2.position.y);
+          if (verticalGap < s1.size || verticalGap < s2.size) {
+            if (s1.position.y < s2.position.y) {
+              s1.grow();
+              s2.shrink();
+            } else {
+              s2.grow();
+              s1.shrink();
+            }
+          }
+        }
       }
     }
   }

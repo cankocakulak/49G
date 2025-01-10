@@ -1,7 +1,7 @@
 // Main simulation file
 ArrayList<Square> squares;
 SquareCollisionHandler collisionHandler;
-float SPEED = 15;
+float SPEED = 10;
 
 void setup() {
   size(800, 800);

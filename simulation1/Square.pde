@@ -6,15 +6,15 @@ class Square {
   
   // Constants for size changes
   final float SIZE_CHANGE_RATE = 5;
-  final float MIN_SIZE = 20;
-  final float MAX_SIZE = 100;
+  final float MIN_SIZE = 50;
+  final float MAX_SIZE = 200;
   
   Square(float x, float y, color c) {
     position = new PVector(x, y);
     float angle = random(-PI/2, 0);
     velocity = PVector.fromAngle(angle);
     velocity.mult(SPEED);
-    size = 50;
+    size = 80;
     squareColor = c;
   }
   
@@ -64,9 +64,24 @@ class Square {
   }
   
   void display() {
+    // Draw the square fill
     noStroke();
     fill(squareColor);
     rectMode(CORNER);
     rect(position.x, position.y, size, size);
+    
+    // Draw red edges on top and bottom
+    strokeWeight(3);
+    stroke(255, 0, 0);
+    // Top edge
+    line(position.x, position.y, position.x + size, position.y);
+    // Bottom edge
+    line(position.x, position.y + size, position.x + size, position.y + size);
+    
+    // Draw size text in the center
+    fill(0);  // Black text
+    textAlign(CENTER, CENTER);
+    textSize(size/4);  // Scale text size relative to square size
+    text(nf(size, 0, 0), position.x + size/2, position.y + size/2);
   }
 }
