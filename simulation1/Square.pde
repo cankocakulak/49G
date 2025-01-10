@@ -3,18 +3,20 @@ class Square {
   PVector velocity;
   float size;
   color squareColor;
+  String title;
   
   final float MIN_SIZE = 100;
   final float MAX_SIZE = 200;
   final float DEFAULT_GROWTH_RATE = 2.0;
   
-  Square(float x, float y, color c) {
+  Square(float x, float y, color c, String t) {
     position = new PVector(x, y);
     float angle = random(-PI/2, 0);
     velocity = PVector.fromAngle(angle);
     velocity.mult(SPEED);
-    size = 150;  // Starting size
+    size = 150;
     squareColor = c;
+    title = t;
   }
   
   void grow(float rate) {
@@ -83,9 +85,14 @@ class Square {
     line(position.x, position.y + size, position.x + size, position.y + size);
     
     // Draw size text in the center
-    fill(0);  // Black text
+    fill(255);  // White text
     textAlign(CENTER, CENTER);
-    textSize(size/4);
+    textSize(size/3);
     text(nf(size, 0, 0), position.x + size/2, position.y + size/2);
+    
+    // Draw title above the square
+    textSize(24);
+    fill(0);  // Black text for title
+    text(title, position.x + size/2, position.y - 20);
   }
 }
