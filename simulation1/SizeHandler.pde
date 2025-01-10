@@ -1,40 +1,24 @@
 class SizeHandler {
-  float growthRate = 10.0;    
-  int cooldownFrames = 30;   
+  float growthRate = 5.0;    // Reduced from 10.0 for smoother changes
+  int cooldownFrames = 15;   // Reduced cooldown for more frequent changes
   int lastChangeFrame = 0;   
   
-  void handleVerticalCollision(Square s1, Square s2) {
+  void handleCollision(Square s1, Square s2) {
     if (!isColliding(s1, s2)) return;
     if (frameCount - lastChangeFrame < cooldownFrames) return;
     
-    // Calculate overlap percentages
-    float horizontalOverlap = calculateHorizontalOverlap(s1, s2);
-    float minSize = min(s1.size, s2.size);
-    
-    // Check if squares are vertically aligned enough (at least 50% horizontal overlap)
-    if (horizontalOverlap > minSize * 0.5) {
-      // Check if one square is clearly above the other
-      boolean isVerticalCollision = 
-        (s1.position.y + s1.size > s2.position.y && s1.position.y < s2.position.y) ||
-        (s2.position.y + s2.size > s1.position.y && s2.position.y < s1.position.y);
-        
-      if (isVerticalCollision && canChangeSize(s1, s2)) {
-        if (s1.position.y < s2.position.y) {
-          s1.grow(growthRate);
-          s2.shrink(growthRate);
-        } else {
-          s2.grow(growthRate);
-          s1.shrink(growthRate);
-        }
-        lastChangeFrame = frameCount;
+    // Determine which square has higher position (regardless of collision type)
+    if (canChangeSize(s1, s2)) {
+      // The square with higher Y position (lower on screen) shrinks
+      if (s1.position.y + s1.size/2 > s2.position.y + s2.size/2) {
+        s2.grow(growthRate);
+        s1.shrink(growthRate);
+      } else {
+        s1.grow(growthRate);
+        s2.shrink(growthRate);
       }
+      lastChangeFrame = frameCount;
     }
-  }
-  
-  private float calculateHorizontalOverlap(Square s1, Square s2) {
-    float left = max(s1.position.x, s2.position.x);
-    float right = min(s1.position.x + s1.size, s2.position.x + s2.size);
-    return max(0, right - left);
   }
   
   private boolean isColliding(Square s1, Square s2) {
