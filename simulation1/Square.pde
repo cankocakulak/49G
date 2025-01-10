@@ -4,18 +4,36 @@ class Square {
   float size;
   color squareColor;
   
-  // Constants for size changes
-  final float SIZE_CHANGE_RATE = 5;
   final float MIN_SIZE = 50;
   final float MAX_SIZE = 200;
+  final float DEFAULT_GROWTH_RATE = 2.0;
   
   Square(float x, float y, color c) {
     position = new PVector(x, y);
     float angle = random(-PI/2, 0);
     velocity = PVector.fromAngle(angle);
     velocity.mult(SPEED);
-    size = 80;
+    size = 100;  // Starting size
     squareColor = c;
+  }
+  
+  void grow(float rate) {
+    float newSize = size + rate;
+    size = constrain(newSize, MIN_SIZE, MAX_SIZE);
+  }
+  
+  void shrink(float rate) {
+    float newSize = size - rate;
+    size = constrain(newSize, MIN_SIZE, MAX_SIZE);
+  }
+  
+  // Default methods for backward compatibility
+  void grow() {
+    grow(DEFAULT_GROWTH_RATE);
+  }
+  
+  void shrink() {
+    shrink(DEFAULT_GROWTH_RATE);
   }
   
   void update() {
@@ -41,26 +59,12 @@ class Square {
     if (position.y < 0) {
       position.y = 0;
       velocity.y *= -1;
-      grow();
+     // grow(DEFAULT_GROWTH_RATE);
     } else if (position.y > height - size) {
       position.y = height - size;
       velocity.y *= -1;
-      grow();
+      //grow(DEFAULT_GROWTH_RATE);
     }
-  }
-  
-  void grow() {
-    // Limit growth rate and maximum size
-    float growthRate = 2.0;  // Smaller growth increment
-    float newSize = size + growthRate;
-    size = constrain(newSize, MIN_SIZE, MAX_SIZE);
-  }
-  
-  void shrink() {
-    // Limit shrink rate and minimum size
-    float shrinkRate = 2.0;  // Smaller shrink increment
-    float newSize = size - shrinkRate;
-    size = constrain(newSize, MIN_SIZE, MAX_SIZE);
   }
   
   void display() {
@@ -81,7 +85,7 @@ class Square {
     // Draw size text in the center
     fill(0);  // Black text
     textAlign(CENTER, CENTER);
-    textSize(size/4);  // Scale text size relative to square size
+    textSize(size/4);
     text(nf(size, 0, 0), position.x + size/2, position.y + size/2);
   }
 }

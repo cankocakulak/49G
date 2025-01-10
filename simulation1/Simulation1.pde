@@ -1,19 +1,14 @@
 // Main simulation file
 ArrayList<Square> squares;
 SquareCollisionHandler collisionHandler;
-float SPEED = 10;
+SizeHandler sizeHandler;
+float SPEED = 15;
 
 void setup() {
   size(800, 800);
   squares = new ArrayList<Square>();
   collisionHandler = new SquareCollisionHandler();
-  
-  // Configure which effects you want
-  collisionHandler.setEffects(
-    true,   // velocity swap
-    false,   // color mixing
-    true    // vertical size changes
-  );
+  sizeHandler = new SizeHandler();
   
   squares.add(new Square(width/4, height/3, 
               color(255, 100, 100)));
@@ -27,17 +22,20 @@ void setup() {
 void draw() {
   background(0);
   
+  println("\nFrame: " + frameCount);  // Add frame counter
+  
   // Update positions
   for (Square square : squares) {
     square.update();
   }
   
-  // Check collisions
+  // Check collisions and handle size changes
   for (int i = 0; i < squares.size(); i++) {
     for (int j = i + 1; j < squares.size(); j++) {
       Square s1 = squares.get(i);
       Square s2 = squares.get(j);
       collisionHandler.handleCollision(s1, s2);
+      sizeHandler.handleVerticalCollision(s1, s2);
     }
   }
   
